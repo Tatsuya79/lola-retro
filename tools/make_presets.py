@@ -79,7 +79,7 @@ scale6 = 1.0
 
 # Values for every parameter a preset sets. Anything not listed keeps the default from common.inc.
 BASE = dict(
-    LR_CONSOLE=0, LR_NORM=0, LR_CABLE=1, LR_COMB=0, LR_SHARP=0.35, LR_SAT=1.25, LR_TINT=0,
+    LR_CONSOLE=0, LR_NORM=0, LR_CABLE=1, LR_COMB=0, LR_YTRAP=0.75, LR_SHARP=0.35, LR_SAT=1.25, LR_TINT=0,
     LR_BRIGHT=0, LR_CONTRAST=1.05, LR_NOISE=0, LR_STEADY=1,
     LR_SIG_LO=0.2, LR_SIG_HI=0.44, LR_HFOCUS=0.5, LR_GAMMA=2.4, LR_PERSIST=0.08, LR_CONV=0.4,
     LR_MASK_TYPE=2, LR_MASK_STR=0.5, LR_MASK_TRIADS=360, LR_WHITE=8500,
@@ -104,7 +104,7 @@ PRESETS = {
         LR_VIGNETTE=0.15, LR_OVERSCAN=0.03, LR_AMBIENT=0.0),
     # Old TV on the antenna input: RF snow, ghosting, soft focus, round tube
     "old-tv-rf": dict(
-        LR_CABLE=0, LR_SHARP=0.5, LR_NOISE=0.09, LR_SAT=1.15, LR_SIG_LO=0.24, LR_SIG_HI=0.5,
+        LR_CABLE=0, LR_YTRAP=0.6, LR_SHARP=0.5, LR_NOISE=0.09, LR_SAT=1.15, LR_SIG_LO=0.24, LR_SIG_HI=0.5,
         LR_HFOCUS=0.7, LR_PERSIST=0.12, LR_CONV=0.6, LR_MASK_TYPE=3, LR_MASK_STR=0.45,
         LR_MASK_TRIADS=320, LR_WHITE=7500, LR_CURV_X=0.07, LR_CURV_Y=0.09, LR_GLOW=0.1,
         LR_VIGNETTE=0.4, LR_OVERSCAN=0.06, LR_AMBIENT=0.005),

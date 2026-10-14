@@ -19,6 +19,7 @@ layout(push_constant) uniform Push
 #pragma parameter LR_HDR_SIG "--- Signal ---" 0.0 0.0 0.0 1.0
 #pragma parameter LR_CABLE "Cable (0 RF, 1 Composite, 2 S-Video, 3 RGB)" 1.0 0.0 3.0 1.0
 #pragma parameter LR_COMB "Comb filter (NTSC composite only)" 0.0 0.0 1.0 1.0
+#pragma parameter LR_YTRAP "Luma trap in the console (less rainbow)" 0.0 0.0 1.0 0.05
 #pragma parameter LR_SHARP "Sharpness" 0.35 0.0 1.0 0.01
 #pragma parameter LR_SAT "Colour" 1.25 0.0 2.0 0.01
 #pragma parameter LR_TINT "Tint (NTSC, degrees)" 0.0 -30.0 30.0 1.0
@@ -56,6 +57,7 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_HDR_SIG;
     float LR_CABLE;
     float LR_COMB;
+    float LR_YTRAP;
     float LR_SHARP;
     float LR_SAT;
     float LR_TINT;
