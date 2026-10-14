@@ -14,6 +14,15 @@ Named after Lola, my retriever. Retro because it is retro.
 
 *Video: [Lola Retro in action](https://www.youtube.com/watch?v=7losgxx2cp0)*
 
+
+Super Turrican on SNES
+https://www.youtube.com/watch?v=xdj4simbOp4
+
+Earthworm Jim on SNES
+https://www.youtube.com/watch?v=Cz7tewURyZg
+
+---
+
 ![Composite vs RGB on the same frame](docs/waterfall-composite-vs-rgb.jpg)
 
 *Same frame, same tube. Left: composite, the 1-pixel waterfall stripes blend into translucent water with a rainbow edge. Right: RGB, the raw stripes.*
