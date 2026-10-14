@@ -10,6 +10,10 @@ On an LCD you only see the raw pixels. This project tries to bring the rest back
 
 Named after Lola, my retriever. Retro because it is retro.
 
+[![Lola Retro on YouTube](https://img.youtube.com/vi/7losgxx2cp0/maxresdefault.jpg)](https://www.youtube.com/watch?v=7losgxx2cp0)
+
+*Video: [Lola Retro in action](https://www.youtube.com/watch?v=7losgxx2cp0)*
+
 ![Composite vs RGB on the same frame](docs/waterfall-composite-vs-rgb.jpg)
 
 *Same frame, same tube. Left: composite, the 1-pixel waterfall stripes blend into translucent water with a rainbow edge. Right: RGB, the raw stripes.*
