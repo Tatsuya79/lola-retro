@@ -1,0 +1,69 @@
+# Recommended cores and settings
+
+Lola Retro simulates the signal the console actually sent, so it needs the console's real pixels.
+Three rules cover almost everything:
+
+1. **Internal resolution.** Native (1×) is the reference. Higher internal resolutions work too: the shader reads
+   the frame as blocks of one console pixel, so the signal stays right and edges get smoother. 3× and up is
+   detected by itself; for 2× and for upscaled 480-line consoles the table says which Console timing to set.
+2. **No filters inside the core.** Turn off any built-in "NTSC", "Blargg", "smoothing" or "blur" filter.
+   The shader does that job.
+3. **Check the console timing.** Auto mode guesses from the frame size. For systems where the guess is wrong,
+   the table says which **Console timing** to set in **Quick Menu → Shaders → Shader Parameters**.
+   Then save it with **Shaders → Save → Save Core Preset**, so it applies to every game on that core.
+
+Every preset exists in `curved/` and `flat/`; the tables below apply to both.
+
+Console timing ids: 1 SNES/NES, 2 Mega Drive H40, 3 Mega Drive H32, 4 PlayStation, 5 PlayStation 2,
+6 Amiga, 7 PC VGA, 8 Arcade 15 kHz, 9 Arcade 24 kHz.
+Systems that are not in that list use the id whose timing matches theirs.
+
+## 8-bit and 16-bit
+
+| System | Core | Preset | Console timing | Settings |
+|---|---|---|---|---|
+| NES / Famicom | Mesen, FCEUmm, Nestopia | Consumer TV (Composite) | auto (1) | Built-in NTSC filter off. The NES only ever had composite and RF, so those are the authentic look. |
+| SNES / Super Famicom | Snes9x, bsnes | Consumer TV (Composite) or (SCART RGB) | auto (1) | NTSC/blargg filter off, hi-res blending off. 512-wide hi-res frames are handled. |
+| Master System | Genesis Plus GX | Consumer TV (Composite) | **3** | Same subcarrier rhythm as the Mega Drive in 256-wide mode. Auto would pick SNES timing. |
+| Mega Drive / Genesis | Genesis Plus GX | Consumer TV (Composite) | auto (2 for 320 wide, set 3 for 256-wide games) | Blargg NTSC filter off, borders off. The famous transparent waterfalls need composite. |
+| Mega CD / Sega CD | Genesis Plus GX | Consumer TV (Composite) | auto (2) | Same as Mega Drive. |
+| 32X | PicoDrive | Consumer TV (Composite) | auto (2) | Same as Mega Drive. |
+| PC Engine / TurboGrafx-16, PC Engine CD | Beetle PCE, Beetle PCE Fast | Consumer TV (Composite) | **4** | Its subcarrier rhythm (227½ cycles per line) matches the PlayStation's. |
+| Neo Geo (AES/MVS) | FinalBurn Neo | Consumer TV (SCART RGB), or Amiga 1084S for the arcade look | auto | RGB arcade hardware, so composite timing does not matter. |
+
+## Arcade
+
+| Hardware | Core | Preset | Console timing | Settings |
+|---|---|---|---|---|
+| 15 kHz arcade (CPS1/2, Neo Geo MVS, most 80s and 90s boards) | FinalBurn Neo, MAME | Amiga 1084S | auto, or 8 | Arcade monitors were 15 kHz RGB. Vertical games: RetroArch rotates the whole picture, including scanlines and mask, the same as a monitor turned on its side. |
+| Medium-res 24 kHz (Sega Model 1/2 at 496×384) | MAME | CRT Projector (deluxe cabinets) or Studio Monitor (RGB) | auto (9) | |
+
+## 32-bit and 64-bit
+
+| System | Core | Preset | Console timing | Settings |
+|---|---|---|---|---|
+| PlayStation | SwanStation, Beetle PSX HW | Consumer TV (Composite) | auto (4); **4** at 2× internal resolution | Any internal resolution; 1× is the original look. Dithering on, no texture filtering, no "true colour". PGXP off for the original wobble. Try the comb filter on composite. |
+| Sega Saturn | Beetle Saturn | Consumer TV (Composite) | **4** | Auto picks Mega Drive timing for 320×224 games. |
+| Nintendo 64 | ParaLLEl N64, Mupen64Plus-Next | Consumer TV (Composite) or (S-Video) | auto (4); **4** at 2× upscaling | Any upscaling; 1× is the original look. Keep the console's own VI filter on for the original look. |
+
+## 128-bit (the PS2 generation)
+
+These consoles mostly output 480i. **No flicker** is on by default, so the two fields are drawn together
+and the picture is stable. Turn it off to see the fields alternate like on a real TV.
+
+| System | Core | Preset | Console timing | Settings |
+|---|---|---|---|---|
+| PlayStation 2 | LRPS2 (PCSX2), Play! | Trinitron (S-Video) or Consumer TV (Composite) | auto (5); **5** when upscaled | Any internal resolution; with upscaling set Console timing 5, otherwise the frame is read as a 240-line mode. |
+| Dreamcast | Flycast | Consumer TV (Composite) on TV, PC Monitor (VGA) with the VGA cable | auto (5); **5** when upscaled on TV; 7 is set by the PC Monitor preset | Match the core's cable type option to the preset. |
+| GameCube | Dolphin | Trinitron (S-Video) or Consumer TV (Composite) | auto (5); **5** when upscaled | Any internal resolution. |
+
+## Computers
+
+| System | Core | Preset | Console timing | Settings |
+|---|---|---|---|---|
+| DOS | DOSBox Pure | PC Monitor (VGA) | 7 (set by the preset) | 320×200 games are drawn with VGA line doubling, like the real 31 kHz monitor. |
+| Amiga | PUAE | Amiga 1084S | auto (6) | Use a low-resolution (320-wide) or high-resolution (640-wide) mode without extra borders, so the frame is 320×256 or 640×512 on PAL. Otherwise set timing 6 by hand. |
+
+## Not covered
+
+Handhelds (Game Boy, Game Gear, GBA, PSP, DS) had LCD screens, not CRTs, so this shader is the wrong tool for them.

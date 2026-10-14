@@ -1,0 +1,174 @@
+#version 450
+// Lola Retro - pass 2: the TV's decoder.
+// Luma: low-pass with peaking ("sharpness"), plus a trap that removes the
+// chroma band (done by re-modulating the decoded chroma, as a real LC trap does
+// spectrally), or a 2-line comb filter.
+// Chroma: synchronous demodulation and a narrow low-pass (consumer sets: ~0.6 MHz).
+// PAL: delay-line averaging with the previous line.
+// Filters are Gaussians in time, so they do not depend on the sample rate.
+
+#include "common.inc"
+
+#pragma stage vertex
+layout(location = 0) in vec4 Position;
+layout(location = 1) in vec2 TexCoord;
+layout(location = 0) out vec2 vTexCoord;
+
+void main()
+{
+    gl_Position = global.MVP * Position;
+    vTexCoord = TexCoord;
+}
+
+#pragma stage fragment
+layout(location = 0) in vec2 vTexCoord;
+layout(location = 0) out vec4 FragColor;
+layout(set = 0, binding = 2) uniform sampler2D Source;    // encoded signal
+layout(set = 0, binding = 3) uniform sampler2D Original;  // used directly for RGB
+
+vec2 sig(float s, float y)
+{
+    if (y < 0.0) return vec2(0.0);
+    return texture(Source, vec2((s + 0.5) * params.SourceSize.z, (y + 0.5) * params.SourceSize.w)).rg;
+}
+
+// Original pixel at x position xs on the native line that starts at row y (k rows averaged)
+vec3 origPix(float xs, float y, float k)
+{
+    if (xs < 0.0 || xs >= params.OriginalSize.x) return vec3(0.0);
+    float u = (floor(xs) + 0.5) * params.OriginalSize.z;
+    vec3 c = vec3(0.0);
+    for (float r = 0.0; r < k; r += 1.0)
+        c += texture(Original, vec2(u, (y + r + 0.5) * params.OriginalSize.w)).rgb;
+    return c / k;
+}
+
+// Rotate a (cos, sin) pair by the angle whose (cos, sin) is r
+vec2 rotate(vec2 e, vec2 r) { return vec2(e.x * r.x - e.y * r.y, e.y * r.x + e.x * r.y); }
+
+void main()
+{
+    Timing T = getTiming(params.OriginalSize.xy, params.FrameCount);
+    float SW = params.SourceSize.x;
+    float fs = T.pclk * SW / params.OriginalSize.x;
+    float n = floor(vTexCoord.x * SW);
+    float y = floor(vTexCoord.y * params.SourceSize.y);
+    float st = (T.interlace > 0.5 ? 2.0 : 1.0) * T.scale;   // previous line of the same field
+    float cable = global.LR_CABLE;
+    float Y;
+    vec2 uv;
+
+    // upscaled frame: only the first row of each native line is decoded
+    if (mod(y, T.scale) > 0.5)
+    {
+        FragColor = vec4(0.0);
+        return;
+    }
+
+    if (cable > 2.5)
+    {
+        // RGB: no NTSC/PAL at all, only the video amplifier bandwidth (~6.5 MHz)
+        float xs = (n + 0.5) * T.pclk / fs;
+        float sigPx = 0.1325 / 6.5 * T.pclk;
+        vec3 acc = vec3(0.0);
+        float ws = 0.0;
+        for (int k = -3; k <= 3; k++)
+        {
+            float w = exp(-0.5 * float(k * k));
+            acc += w * origPix(xs + float(k) * sigPx, y, T.scale);
+            ws += w;
+        }
+        vec3 c = acc / ws;
+        Y = dot(c, vec3(0.299, 0.587, 0.114));
+        uv = vec2(0.492 * (c.b - Y), 0.877 * (c.r - Y));
+    }
+    else
+    {
+        bool pal = T.pal > 0.5;
+        bool sv = cable > 1.5;
+        bool comb = global.LR_COMB > 0.5 && !sv && !pal && cable > 0.5 && abs(T.lineFrac - 0.5) < 0.05;
+
+        float fcY, fcC, notch;
+        if (cable < 0.5)  { fcY = pal ? 3.6 : 2.8; notch = 0.95; fcC = 0.5; }
+        else if (!sv)     { fcY = comb ? 4.2 : (pal ? 4.2 : 3.3); notch = comb ? 0.0 : 0.92; fcC = pal ? 0.8 : 0.6; }
+        else              { fcY = pal ? 5.0 : 4.6; notch = 0.0; fcC = pal ? 1.0 : 0.9; }
+
+        float tn = n / fs;
+        float sh = global.LR_SHARP * 1.4;
+
+        // luma: (1 + sh) * G(s1) - sh * G(s2), unit gain at DC, boost in the middle.
+        // The taps are s2 / 4 apart, so the Gaussian weights only depend on the tap number.
+        float s1 = 0.1325 / fcY;
+        float s2 = s1 * 2.5;
+        float stepY = 0.25 * s2 * fs;              // tap spacing in samples
+        float a1 = 0.0, a2 = 0.0, w1s = 0.0, w2s = 0.0;
+        for (int k = -12; k <= 12; k++)
+        {
+            float u = float(k);
+            float w1 = exp(-0.1953125 * u * u);    // exp(-0.5 (0.625 k)^2)
+            float w2 = exp(-0.03125 * u * u);      // exp(-0.5 (0.25 k)^2)
+            float sp = n + u * stepY;
+            float s0 = sig(sp, y).x;
+            if (comb) s0 = 0.5 * (s0 + sig(sp, y - st).x);
+            a1 += w1 * s0; a2 += w2 * s0; w1s += w1; w2s += w2;
+        }
+        Y = (1.0 + sh) * a1 / w1s - sh * a2 / w2s;
+
+        // chroma: demodulate against the subcarrier, then low-pass.
+        // The taps are 0.15 sigma apart. The subcarrier advances by the same angle from tap
+        // to tap, so its (cos, sin) is rotated by that angle instead of recomputed per tap.
+        float sc = 0.1325 / fcC;
+        float dtC = 0.15 * sc;                     // tap spacing in microseconds
+        float stepC = dtC * fs;                    // in samples
+        float vs = vSign(y, T), vsp = vSign(y - st, T);
+        float tint = pal ? 0.0 : radians(global.LR_TINT);
+        float ph0 = phaseAt(tn, y, T) + tint;      // subcarrier phase at the centre tap
+        float da = TAU * T.fsc * dtC;
+        vec2 rp = vec2(cos(da), sin(da));
+        vec2 e0 = vec2(cos(ph0), sin(ph0));
+        float a0 = ph0 - 20.0 * da;
+        a0 -= TAU * floor(a0 / TAU + 0.5);         // keep the angle small for an accurate sin/cos
+        vec2 e = vec2(cos(a0), sin(a0));           // (cos, sin) at the first tap
+        vec2 acc = vec2(0.0), accp = vec2(0.0);    // sums of w * signal * (sin, cos)
+        float wcs = 0.0;
+        for (int k = -20; k <= 20; k++)
+        {
+            float u = float(k);
+            float w = exp(-0.01125 * u * u);       // exp(-0.5 (0.15 k)^2)
+            float sp = n + u * stepC;
+            vec2 v0 = sig(sp, y);
+            float s0 = sv ? v0.y : v0.x;
+            if (comb) s0 = 0.5 * (v0.x - sig(sp, y - st).x);
+            acc += w * s0 * e.yx;
+            if (pal)
+            {
+                vec2 vp = sig(sp, y - st);
+                accp += w * (sv ? vp.y : vp.x) * e.yx;
+            }
+            wcs += w;
+            e = rotate(e, rp);
+        }
+        vec2 cs = 2.0 * vec2(acc.x, vs * acc.y);
+        uv = cs / wcs;
+
+        if (!sv && !comb && notch > 0.0)
+        {
+            // trap: take the chroma band back out of luma
+            float hf = (1.0 + sh) * exp(-19.7392 * s1 * s1 * T.fsc * T.fsc) - sh * exp(-19.7392 * s2 * s2 * T.fsc * T.fsc);
+            Y -= notch * hf * (uv.x * e0.y + vs * uv.y * e0.x);
+        }
+        if (pal)
+        {
+            // the previous line has its own subcarrier phase: rotate its sums by the difference
+            float dl = phaseAt(tn, y - st, T) - (ph0 - tint);
+            vec2 rd = vec2(cos(dl), sin(dl));
+            vec2 csp = 2.0 * vec2(accp.x * rd.x + accp.y * rd.y, vsp * (accp.y * rd.x - accp.x * rd.y));
+            uv = 0.5 * (uv + csp / wcs);
+        }
+    }
+
+    uv *= global.LR_SAT * global.LR_CONTRAST;
+    Y = Y * global.LR_CONTRAST + global.LR_BRIGHT;
+    vec3 rgb = vec3(Y + 1.13983 * uv.y, Y - 0.39465 * uv.x - 0.58060 * uv.y, Y + 2.03211 * uv.x);
+    FragColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
+}

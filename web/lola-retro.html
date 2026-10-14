@@ -1,0 +1,1817 @@
+<title>Lola Retro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Michroma&display=swap">
+<style>
+/* Layout: the tube is the hero, a narrow deck strip under it, then the signal path as five panels in chain order */
+:root{
+  color-scheme: dark;
+  --glass:#121614;
+  --plastic:#1b201e;
+  --plastic-hi:#272d2a;
+  --set-top:#252b28;
+  --set-bot:#181c1a;
+  --rule:#313935;
+  --ink:#e9e5d8;
+  --ink-dim:#a4aca6;
+  --ink-faint:#737c76;
+  --bar-y:#d6c64e;
+  --bar-c:#5cc3c6;
+  --bar-g:#6cbf5c;
+  --bar-m:#c862c2;
+  --bar-r:#d4583f;
+  --shadow:#000000;
+  --font-display:"Michroma","Eurostile","Microgramma",ui-sans-serif,sans-serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-s:6px;
+  --r-m:12px;
+}
+html,body{background:var(--glass);color:var(--ink)}
+body{font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--bar-y);outline-offset:2px}
+
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:22px 56px;display:grid;gap:18px}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px}
+.top h1{margin:0;font:400 clamp(21px,4.2vw,32px)/1.1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;text-wrap:balance}
+.top p{margin:6px 0 0;color:var(--ink-dim);max-width:62ch;font-size:14.5px}
+.bars{display:flex;height:8px;width:min(220px,40vw);border-radius:2px;overflow:hidden;flex:none}
+.bars span{flex:1}
+
+.scenes{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);background:var(--plastic);color:var(--ink-dim);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:500;cursor:pointer;min-height:36px;transition:background .15s,color .15s,border-color .15s}
+.chip:hover{color:var(--ink);border-color:var(--ink-faint)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--glass);border-color:var(--ink)}
+.chip .tag{font:500 11px var(--font-mono);opacity:.7;margin-left:6px}
+
+.set{width:100%;max-width:min(100%,calc(74vh * 4 / 3 + 48px));margin-inline:auto;background:linear-gradient(180deg,var(--set-top),var(--set-bot));border:1px solid var(--rule);border-radius:24px;padding:clamp(10px,2.4vw,24px) clamp(10px,2.4vw,24px) 12px;box-shadow:0 34px 60px -34px var(--shadow);display:grid;gap:10px}
+.screen{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:14px;overflow:hidden;background:var(--shadow)}
+.screen canvas{display:block;width:100%;height:100%;touch-action:auto}
+.deck{display:flex;align-items:center;gap:10px;min-width:0;padding-inline:4px}
+.led{width:7px;height:7px;border-radius:50%;background:var(--bar-r);box-shadow:0 0 8px var(--bar-r);flex:none}
+.readout{min-width:0;font:12px/1.45 var(--font-mono);color:var(--ink-dim);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.set{position:relative}
+.set.max{position:fixed;inset:0;z-index:50;max-width:none;width:auto;margin:0;border:0;border-radius:0;background:var(--shadow);box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:calc(8px + env(safe-area-inset-top, 0px)) 8px calc(8px + env(safe-area-inset-bottom, 0px))}
+.set.max .screen{width:min(100%,calc((100vh - 64px) * 4 / 3));width:min(100%,calc((100dvh - 64px) * 4 / 3));height:auto}
+.exitMax{position:absolute;top:calc(10px + env(safe-area-inset-top, 0px));right:12px;z-index:2;background:color-mix(in srgb,var(--glass) 80%,transparent)}
+body.maxed{overflow:hidden}
+
+.cmp-label{position:absolute;top:10px;font:500 11px var(--font-mono);letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:color-mix(in srgb,var(--glass) 75%,transparent);color:var(--ink);pointer-events:none}
+.cmp-label.left{left:10px}
+.cmp-label.right{right:10px}
+.drop{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--glass) 70%,transparent);border:2px dashed var(--bar-y);border-radius:14px;font:400 15px var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);pointer-events:none}
+.glfail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--ink-dim)}
+
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:center}
+.tbtn{border:1px solid var(--rule);background:var(--plastic);border-radius:var(--r-s);padding:8px 13px;font-size:13.5px;font-weight:500;cursor:pointer;min-height:38px;color:var(--ink)}
+.tbtn:hover{border-color:var(--ink-faint)}
+.tbtn[aria-pressed="true"]{border-color:var(--bar-y);box-shadow:inset 0 -2px 0 var(--bar-y)}
+.zoom{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-dim)}
+.zoom input{width:min(180px,36vw);accent-color:var(--bar-y)}
+.zoom output{font:500 12.5px var(--font-mono);color:var(--ink);min-width:3.5ch;font-variant-numeric:tabular-nums}
+.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;min-height:38px;padding:0 4px}
+.chk input{width:18px;height:18px;margin:0;accent-color:var(--bar-y);cursor:pointer}
+.hint{margin:-6px 0 0;text-align:center;color:var(--ink-faint);font-size:13px}
+
+.presets{display:grid;gap:8px}
+.eyebrow{font:400 11px/1 var(--font-display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--glass);border:1px solid var(--rule);border-radius:var(--r-s);padding:3px}
+.seg button{flex:1 1 auto;color:var(--ink-dim);background:transparent;border:0;border-radius:4px;padding:7px 10px;cursor:pointer;min-height:34px;font-size:13px;font-weight:500;line-height:1.2}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--plastic-hi);color:var(--ink);box-shadow:inset 0 -2px 0 var(--sw,var(--bar-y))}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.presets .seg button{padding:9px 12px;font-size:13.5px}
+
+.panel{columns:3 290px;column-gap:14px}
+.stage{--sw:var(--bar-y);break-inside:avoid;display:grid;gap:13px;margin:0 0 14px;background:var(--plastic);border:1px solid var(--rule);border-radius:var(--r-m);padding:14px 14px 16px}
+.stage h2{display:flex;align-items:center;gap:10px;margin:0;font:400 12px/1 var(--font-display);letter-spacing:.15em;text-transform:uppercase}
+.stage h2 .sw{width:22px;height:9px;border-radius:2px;background:var(--sw);flex:none}
+.stage h2 .step{margin-left:auto;font:400 11px var(--font-mono);letter-spacing:0;color:var(--ink-faint)}
+.stage .what{margin:-4px 0 0;font-size:13px;color:var(--ink-faint);line-height:1.45}
+.ctl{display:grid;gap:3px;min-width:0}
+.ctl .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ctl label,.ctl .lab{font-size:13.5px;color:var(--ink-dim)}
+.ctl output{font:500 12.5px var(--font-mono);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl input[type=range]{width:100%;margin:0;height:26px;accent-color:var(--sw)}
+.ctl select{width:100%;background:var(--glass);border:1px solid var(--rule);border-radius:var(--r-s);padding:8px 10px;min-height:38px;font-size:14px}
+.note{font-size:12.5px;line-height:1.45;color:var(--bar-y);margin:0}
+.upl{display:grid;gap:8px}
+.upl .tbtn{width:100%;text-align:center}
+.upl small{color:var(--ink-faint);font-size:12.5px;line-height:1.45}
+.detect{font:12px/1.45 var(--font-mono);color:var(--ink-dim);margin:0;overflow-wrap:anywhere}
+
+.notes{display:grid;gap:14px;padding-top:8px;border-top:1px solid var(--rule)}
+.notes h2{margin:0;font:400 13px/1.2 var(--font-display);letter-spacing:.14em;text-transform:uppercase}
+.notes dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px 28px}
+.notes dt{font-weight:600;font-size:15px;margin-bottom:4px}
+.notes dd{margin:0;color:var(--ink-dim);font-size:14.5px;max-width:62ch}
+.notes .foot{margin:0;color:var(--ink-faint);font-size:13.5px;max-width:75ch}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){.chip,.tbtn{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Lola Retro</h1>
+      <p>Cijeli analogni lanac u jednom shaderu: konzola, kabel, dekoder u televizoru, elektronski snop, maska fosfora i debelo staklo. Izaberi scenu ili učitaj screenshot prave igre.</p>
+    </div>
+    <div class="bars" aria-hidden="true">
+      <span style="background:#c0c0c0"></span><span style="background:var(--bar-y)"></span><span style="background:var(--bar-c)"></span><span style="background:var(--bar-g)"></span><span style="background:var(--bar-m)"></span><span style="background:var(--bar-r)"></span><span style="background:#3d4fc4"></span>
+    </div>
+  </header>
+
+  <nav class="scenes" id="scenes" aria-label="Scena"></nav>
+
+  <section class="set" id="set" aria-label="Televizor">
+    <button class="tbtn exitMax" id="exitMax" hidden>Zatvori · Esc</button>
+    <div class="screen" id="screen">
+      <canvas id="tv" aria-label="Simulirani CRT ekran"></canvas>
+      <div class="cmp-label left" id="lblL" hidden>LCD · goli pikseli</div>
+      <div class="cmp-label right" id="lblR" hidden>CRT</div>
+      <div class="drop" id="drop" hidden>Pusti sliku</div>
+      <p class="glfail" id="glfail" hidden>Ovaj preglednik ne podržava WebGL2, a simulacija bez njega ne može raditi. Probaj u novijem Safariju, Chromeu ili Firefoxu.</p>
+    </div>
+    <div class="deck">
+      <span class="led" aria-hidden="true"></span>
+      <span class="readout" id="readout">…</span>
+    </div>
+  </section>
+
+  <div class="tools">
+    <button class="tbtn" id="cmp" aria-pressed="false">Usporedi s LCD-om</button>
+    <label class="zoom" for="zoom">Povećanje <input type="range" id="zoom" min="1" max="8" step="0.1" value="1"><output id="zoomOut">1×</output></label>
+    <button class="tbtn" id="pause" aria-pressed="false">Pauziraj igru</button>
+    <label class="chk" for="steady"><input type="checkbox" id="steady"> Bez titranja</label>
+    <button class="tbtn" id="fsBtn">Preko cijelog ekrana</button>
+  </div>
+  <p class="hint" id="hint">Uz povećanje vidiš masku fosfora kao da si nosom na staklu. Povuci po ekranu za pomicanje, a u usporedbi povuci razdjelnik.</p>
+
+  <section class="presets" aria-label="Televizor">
+    <span class="eyebrow">Televizor</span>
+    <div class="seg" id="presets"></div>
+  </section>
+
+  <section class="panel" id="panel" aria-label="Postavke signala"></section>
+
+  <section class="notes">
+    <h2>Što se tu zapravo događa</h2>
+    <dl>
+      <div><dt>Boja i svjetlina u istoj žici</dt><dd>Kompozitni signal nosi boju na nosiocu od 3,58 MHz (PAL 4,43 MHz), pomiješanu sa svjetlinom. Stupci široki jedan piksel na Mega Driveu mijenjaju se oko 3,35 MHz, gotovo točno gdje televizor traži boju. Dekoder ih zato djelomično zamuti, a djelomično pretvori u duginu boju. To je onaj vodopad.</dd></div>
+      <div><dt>Dither postaje prozirnost</dt><dd>Šahovnica od dvije boje nakon filtra postaje njihova mješavina. Tako su 16-bitne igre glumile prozirnu vodu, a PlayStationov 4×4 dither se na ekranu stapa u glatki prijelaz. Na LCD-u ostaje vidljiva mrežica.</dd></div>
+      <div><dt>Snop se širi sa svjetlinom</dt><dd>Elektronski snop je tanak na tamnim dijelovima i širi se na svijetlim. Svijetle linije se stapaju, a razmaci se vide uglavnom u sjeni. Zato oštre crne scanlinije iz većine shadera ne izgledaju kao pravi televizor.</dd></div>
+      <div><dt>Svaka konzola ima svoj ritam</dt><dd>SNES ima 227⅓ ciklusa nosioca po liniji, pa točkice boje puze dijagonalno. Mega Drive ima točno 228, pa su pruge mirne i okomite. PlayStation ima 227½, pa uzorak titra svaki drugi frame i comb filter ga može očistiti.</dd></div>
+    </dl>
+    <p class="foot">Scene su originalne, nacrtane istim tehnikama kao igre tog doba. Za prave igre učitaj svoj screenshot, najbolje u izvornoj rezoluciji i bez filtera emulatora. Povećane slike (2×, 3×, 4×…) automatski se vraćaju na izvornu rezoluciju.</p>
+  </section>
+  <input type="file" id="file" accept="image/*" class="vh" tabindex="-1" aria-hidden="true">
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const canvas = $('#tv');
+const gl = canvas.getContext('webgl2', { antialias:false, alpha:false, depth:false, stencil:false, premultipliedAlpha:false, powerPreference:'high-performance' });
+if (!gl) { $('#glfail').hidden = false; return; }
+
+// ===================================================================
+// Small helpers
+// ===================================================================
+const frac = x => x - Math.floor(x);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+function rng(seed) { return function () { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hash2(x, y) { let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+const fmt = (v, d) => v.toFixed(d).replace('.', ',');
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
+// Packed ABGR (little endian RGBA bytes)
+const RGBA = (r, g, b, a = 255) => (((a & 255) << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255)) >>> 0;
+const cR = c => c & 255, cG = c => (c >>> 8) & 255, cB = c => (c >>> 16) & 255, cA = c => c >>> 24;
+const q3 = v => Math.round(Math.round(clamp(v, 0, 255) / 255 * 7) * 255 / 7);   // Mega Drive 9-bit
+const q5 = v => Math.round(Math.round(clamp(v, 0, 255) / 255 * 31) * 255 / 31); // SNES / PS1 15-bit
+const MD = (r, g, b) => RGBA(q3(r), q3(g), q3(b));
+const SN = (r, g, b) => RGBA(q5(r), q5(g), q5(b));
+const scaleC = (c, f, Q) => Q(cR(c) * f, cG(c) * f, cB(c) * f);
+
+// Pixel buffer
+function PB(w, h) {
+  const d = new Uint32Array(w * h);
+  const o = {
+    w, h, d,
+    px(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < w && y < h) d[y * w + x] = c; },
+    get(x, y) { return (x >= 0 && y >= 0 && x < w && y < h) ? d[y * w + x] : 0; },
+    rect(x, y, rw, rh, c) { const x0 = Math.max(0, x | 0), y0 = Math.max(0, y | 0), x1 = Math.min(w, (x + rw) | 0), y1 = Math.min(h, (y + rh) | 0); for (let j = y0; j < y1; j++) if (x1 > x0) d.fill(c, j * w + x0, j * w + x1); },
+    ellipse(cx, cy, rx, ry, c) { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) { const dx = (x + .5 - cx) / rx, dy = (y + .5 - cy) / ry; if (dx * dx + dy * dy <= 1) o.px(x, y, c); } },
+    blit(s, dx, dy) { dx |= 0; dy |= 0; for (let j = 0; j < s.h; j++) { const yy = j + dy; if (yy < 0 || yy >= h) continue; for (let i = 0; i < s.w; i++) { const c = s.d[j * s.w + i]; if ((c >>> 24) === 0) continue; const xx = i + dx; if (xx < 0 || xx >= w) continue; d[yy * w + xx] = c; } } },
+    copy(src) { d.set(src.d); },
+    bytes() { return new Uint8Array(d.buffer); }
+  };
+  return o;
+}
+function fromStrings(rows, pal) {
+  const w = Math.max(...rows.map(r => r.length)), p = PB(w, rows.length);
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const c = pal[r[x]]; if (c) p.px(x, y, c); } });
+  return p;
+}
+// Shape-built sprite: automatic top-left light, bottom-right shade, then a 1px outline
+function makeSprite(w, h, Q, outline, build, detail) {
+  const s = PB(w, h); build(s);
+  const src = new Uint32Array(s.d);
+  const op = (x, y) => x >= 0 && y >= 0 && x < w && y < h && cA(src[y * w + x]) > 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, c = src[i]; if (!cA(c)) continue;
+    if (!op(x - 1, y) || !op(x, y - 1)) s.d[i] = scaleC(c, 1.3, Q);
+    else if (!op(x + 1, y) || !op(x, y + 1)) s.d[i] = scaleC(c, 0.68, Q);
+  }
+  const s2 = new Uint32Array(s.d);
+  const op2 = (x, y) => x >= 0 && y >= 0 && x < w && y < h && cA(s2[y * w + x]) > 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (cA(s2[y * w + x])) continue;
+    if (op2(x - 1, y) || op2(x + 1, y) || op2(x, y - 1) || op2(x, y + 1)) s.d[y * w + x] = outline;
+  }
+  if (detail) detail(s);
+  return s;
+}
+
+// 5x7 bitmap font
+const FONT = {
+  'A': [0x0E,0x11,0x11,0x1F,0x11,0x11,0x11], 'B': [0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E], 'C': [0x0E,0x11,0x10,0x10,0x10,0x11,0x0E],
+  'D': [0x1E,0x11,0x11,0x11,0x11,0x11,0x1E], 'E': [0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F], 'F': [0x1F,0x10,0x10,0x1E,0x10,0x10,0x10],
+  'G': [0x0E,0x11,0x10,0x17,0x11,0x11,0x0F], 'H': [0x11,0x11,0x11,0x1F,0x11,0x11,0x11], 'I': [0x0E,0x04,0x04,0x04,0x04,0x04,0x0E],
+  'J': [0x07,0x02,0x02,0x02,0x02,0x12,0x0C], 'K': [0x11,0x12,0x14,0x18,0x14,0x12,0x11], 'L': [0x10,0x10,0x10,0x10,0x10,0x10,0x1F],
+  'M': [0x11,0x1B,0x15,0x15,0x11,0x11,0x11], 'N': [0x11,0x11,0x19,0x15,0x13,0x11,0x11], 'O': [0x0E,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'P': [0x1E,0x11,0x11,0x1E,0x10,0x10,0x10], 'Q': [0x0E,0x11,0x11,0x11,0x15,0x12,0x0D], 'R': [0x1E,0x11,0x11,0x1E,0x14,0x12,0x11],
+  'S': [0x0F,0x10,0x10,0x0E,0x01,0x01,0x1E], 'T': [0x1F,0x04,0x04,0x04,0x04,0x04,0x04], 'U': [0x11,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'V': [0x11,0x11,0x11,0x11,0x11,0x0A,0x04], 'W': [0x11,0x11,0x11,0x15,0x15,0x15,0x0A], 'X': [0x11,0x11,0x0A,0x04,0x0A,0x11,0x11],
+  'Y': [0x11,0x11,0x11,0x0A,0x04,0x04,0x04], 'Z': [0x1F,0x01,0x02,0x04,0x08,0x10,0x1F],
+  '0': [0x0E,0x11,0x13,0x15,0x19,0x11,0x0E], '1': [0x04,0x0C,0x04,0x04,0x04,0x04,0x0E], '2': [0x0E,0x11,0x01,0x02,0x04,0x08,0x1F],
+  '3': [0x1F,0x02,0x04,0x02,0x01,0x11,0x0E], '4': [0x02,0x06,0x0A,0x12,0x1F,0x02,0x02], '5': [0x1F,0x10,0x1E,0x01,0x01,0x11,0x0E],
+  '6': [0x06,0x08,0x10,0x1E,0x11,0x11,0x0E], '7': [0x1F,0x01,0x02,0x04,0x08,0x08,0x08], '8': [0x0E,0x11,0x11,0x0E,0x11,0x11,0x0E],
+  '9': [0x0E,0x11,0x11,0x0F,0x01,0x02,0x0C], ':': [0x00,0x0C,0x0C,0x00,0x0C,0x0C,0x00], '-': [0,0,0,0x1F,0,0,0],
+  '.': [0,0,0,0,0,0x0C,0x0C], 'x': [0,0,0x11,0x0A,0x04,0x0A,0x11], '/': [0x01,0x01,0x02,0x04,0x08,0x10,0x10], ' ': [0,0,0,0,0,0,0]
+};
+function text(pb, str, x, y, col, opt = {}) {
+  const sc = opt.scale || 1;
+  const draw = (ox, oy, c) => { let cx = x + ox; for (const ch of str) { const g = FONT[ch] || FONT[' ']; for (let r = 0; r < 7; r++) for (let b = 0; b < 5; b++) if (g[r] & (16 >> b)) pb.rect(cx + b * sc, y + oy + r * sc, sc, sc, c); cx += 6 * sc; } };
+  if (opt.outline) for (const [ox, oy] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]) draw(ox, oy, opt.outline);
+  if (opt.shadow) draw(sc, sc, opt.shadow);
+  draw(0, 0, col);
+  return str.length * 6 * sc;
+}
+
+// ===================================================================
+// Console timing (NTSC / PAL)
+// ===================================================================
+const FSC = { ntsc: 3.579545, pal: 4.433619 };
+const SYSTEMS = {
+  snes: { name: 'SNES / NES', nominal: 256, pclk: { ntsc: 5.369318, pal: 5.320342 }, cpl: { ntsc: 227 + 1/3, pal: 284 + 1/6 }, lpf: { ntsc: 262, pal: 312 } },
+  md40: { name: 'Mega Drive H40', nominal: 320, pclk: { ntsc: 6.711647, pal: 6.650428 }, cpl: { ntsc: 228, pal: 285 }, lpf: { ntsc: 262, pal: 313 } },
+  md32: { name: 'Mega Drive H32', nominal: 256, pclk: { ntsc: 5.369318, pal: 5.320342 }, cpl: { ntsc: 228, pal: 285 }, lpf: { ntsc: 262, pal: 313 } },
+  ps1:  { name: 'PlayStation', nominal: 320, pclk: { ntsc: 6.711647, pal: 6.652800 }, cpl: { ntsc: 227.5, pal: 283.75 }, lpf: { ntsc: 263, pal: 314 } },
+  ps2:  { name: 'PlayStation 2', nominal: 640, pclk: { ntsc: 13.5, pal: 13.5 }, cpl: { ntsc: 227.5, pal: 283.75 }, lpf: { ntsc: 262.5, pal: 312.5 } },
+  amiga: { name: 'Amiga', nominal: 320, pclk: { ntsc: 7.15909, pal: 7.09379 }, cpl: { ntsc: 227.5, pal: 283.75 }, lpf: { ntsc: 262.5, pal: 312.5 } },
+  // Medium-res arcade (Sega Model 1/2: 496x384 progressive, 24 kHz)
+  arcade24: { name: 'Arkada · 24 kHz', nominal: 496, scan: 'fill', pclk: { ntsc: 16.0, pal: 16.0 }, cpl: { ntsc: 227.5, pal: 283.75 }, lpf: { ntsc: 262.5, pal: 312.5 } },
+  // VGA: 31.5 kHz, 200-line modes are scanned twice (400 lines at 70 Hz)
+  vga:  { name: 'PC · VGA', nominal: 320, scan: 'vga', pclk: { ntsc: 12.5875, pal: 12.5875 }, cpl: { ntsc: 227.5, pal: 283.75 }, lpf: { ntsc: 262.5, pal: 312.5 } }
+};
+const CPL_LABEL = v => { const f = frac(v); const i = Math.floor(v); if (Math.abs(f) < 1e-6) return String(i); if (Math.abs(f - 1/3) < 1e-4) return i + '⅓'; if (Math.abs(f - 1/6) < 1e-4) return i + '⅙'; if (Math.abs(f - .5) < 1e-4) return i + '½'; if (Math.abs(f - .75) < 1e-4) return i + '¾'; return fmt(v, 2); };
+
+// ===================================================================
+// GL helpers
+// ===================================================================
+let floatRT = !!(gl.getExtension('EXT_color_buffer_float') || gl.getExtension('EXT_color_buffer_half_float'));
+function compile(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { const log = gl.getShaderInfoLog(s); console.error(log + '\n' + src.split('\n').map((l, i) => (i + 1) + ': ' + l).join('\n')); throw new Error(log); }
+  return s;
+}
+function program(vs, fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compile(gl.VERTEX_SHADER, vs)); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+  gl.bindAttribLocation(p, 0, 'aPos'); gl.bindAttribLocation(p, 1, 'aUV'); gl.bindAttribLocation(p, 2, 'aCol');
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  p.loc = {}; return p;
+}
+const L = (p, n) => (n in p.loc) ? p.loc[n] : (p.loc[n] = gl.getUniformLocation(p, n));
+const u1 = (p, n, v) => gl.uniform1f(L(p, n), v);
+const u2 = (p, n, a, b) => gl.uniform2f(L(p, n), a, b);
+const u3 = (p, n, a) => gl.uniform3f(L(p, n), a[0], a[1], a[2]);
+const u4 = (p, n, a, b, c, d) => gl.uniform4f(L(p, n), a, b, c, d);
+const ui2 = (p, n, a, b) => gl.uniform2i(L(p, n), a, b);
+const um4 = (p, n, m) => gl.uniformMatrix4fv(L(p, n), false, m);
+const u1v = (p, n, a) => gl.uniform1fv(L(p, n), a);
+function tex(p, n, unit, t) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(L(p, n), unit); }
+
+function makeTarget(w, h, wantFloat) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  let isF = wantFloat && floatRT;
+  const alloc = f => f ? gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null)
+                       : gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  alloc(isF);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  if (isF && gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { floatRT = false; isF = false; alloc(false); }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { tex: t, fb, w, h, isF };
+}
+function freeTarget(t) { if (!t) return; gl.deleteTexture(t.tex); gl.deleteFramebuffer(t.fb); if (t.rb) gl.deleteRenderbuffer(t.rb); }
+function makeTexture(w, h, bytes, filter = gl.NEAREST, wrap = gl.CLAMP_TO_EDGE) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+  return t;
+}
+
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+const qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+function fullscreen(target) {
+  if (target) { gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb); gl.viewport(0, 0, target.w, target.h); }
+  else { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, canvas.width, canvas.height); }
+  gl.bindVertexArray(quadVAO); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+// ===================================================================
+// Shaders
+// ===================================================================
+const HDR = `#version 300 es
+precision highp float; precision highp int; precision highp sampler2D;
+`;
+const VS = HDR + `in vec2 aPos; void main(){ gl_Position = vec4(aPos, 0., 1.); }`;
+const COMMON = `
+const float TAU = 6.28318530718;
+float hash13(vec3 p3){ p3 = fract(p3 * .1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); }
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+`;
+// Subcarrier phase model shared by encoder and decoder
+const PHASE = `
+uniform float uCPS, uLineFrac, uFramePhase, uFieldPhase, uPAL, uVSwitch, uStepSig;
+float physLine(int y){ return uStepSig > 1.5 ? floor(float(y) * .5) : float(y); }
+bool oddField(int y){ return uStepSig > 1.5 && (y & 1) == 1; }
+float phaseAt(float n, int y){
+  float fo = oddField(y) ? uFieldPhase : 0.;
+  return TAU * fract(fract(uCPS * n) + fract(uLineFrac * physLine(y)) + fo + uFramePhase);
+}
+float vSign(int y){
+  if (uPAL < .5) return 1.;
+  float pl = physLine(y) + uVSwitch + (oddField(y) ? 1. : 0.);
+  return mod(pl, 2.) < .5 ? 1. : -1.;
+}
+`;
+const SRCPIX = `
+uniform sampler2D uSrc; uniform ivec2 uSrcSize; uniform float uFlip; uniform float uSPP;
+vec3 srcPix(float xs, int y){
+  int x = int(floor(xs));
+  if (x < 0 || x >= uSrcSize.x || y < 0 || y >= uSrcSize.y) return vec3(0.);
+  int yy = uFlip > .5 ? uSrcSize.y - 1 - y : y;
+  return texelFetch(uSrc, ivec2(x, yy), 0).rgb;
+}
+`;
+
+// Pass 1: console encoder. RGB -> YUV, chroma band-limited and QAM-modulated onto the subcarrier.
+const ENC_FS = HDR + COMMON + PHASE + SRCPIX + `
+uniform float uChromaSigma, uMode, uNoise, uGhost, uGhostDelay, uSeed, uSigFloat;
+out vec4 o;
+vec2 enc(float n, int y){
+  vec3 c = srcPix((n + .5) / uSPP, y);
+  float Y = dot(c, vec3(.299, .587, .114));
+  vec2 uv = vec2(0.); float ws = 0.;
+  for (int k = -8; k <= 8; k++){
+    float fk = float(k);
+    float w = exp(-.5 * fk * fk / (uChromaSigma * uChromaSigma));
+    vec3 cc = srcPix((n + fk + .5) / uSPP, y);
+    float yy = dot(cc, vec3(.299, .587, .114));
+    uv += w * vec2(.492 * (cc.b - yy), .877 * (cc.r - yy));
+    ws += w;
+  }
+  uv /= ws;
+  float ph = phaseAt(n, y);
+  return vec2(Y, uv.x * sin(ph) + vSign(y) * uv.y * cos(ph));
+}
+void main(){
+  int y = int(gl_FragCoord.y);
+  float n = floor(gl_FragCoord.x);
+  vec2 r;
+  if (uMode < .5){            // RF: composite + echo + snow
+    vec2 a = enc(n, y);
+    float comp = a.x + a.y;
+    vec2 g = enc(n - uGhostDelay, y);
+    comp += uGhost * (g.x + g.y);
+    comp += (hash13(vec3(n, float(y), uSeed)) - .5) * uNoise;
+    comp += (hash13(vec3(floor(n / 7.), float(y), uSeed + 3.)) - .5) * uNoise * .8;
+    comp += sin(float(y) * .045 + uSeed * .37) * uNoise * .12;
+    r = vec2(comp, 0.);
+  } else if (uMode < 1.5){    // composite
+    vec2 a = enc(n, y); r = vec2(a.x + a.y, 0.);
+  } else {                    // S-Video: luma and chroma on separate wires
+    r = enc(n, y);
+  }
+  if (uSigFloat < .5) r = r * .4 + .3;
+  o = vec4(r, 0., 1.);
+}`;
+
+// Pass 2: TV decoder. Luma notch/low-pass (or comb), synchronous chroma demodulation, PAL delay line, TV knobs.
+const DEC_FS = HDR + COMMON + PHASE + SRCPIX + `
+uniform sampler2D uSig; uniform ivec2 uSigSize;
+uniform float uKY[41]; uniform float uKC[41];
+uniform float uMode, uComb, uSigFloat, uRGBSigma;
+uniform float uNotch, uKYfsc;
+uniform float uTint, uSat, uBright, uContrast;
+out vec4 o;
+vec2 sig(int n, int y){
+  if (n < 0 || n >= uSigSize.x || y < 0 || y >= uSigSize.y) return vec2(0.);
+  vec2 v = texelFetch(uSig, ivec2(n, y), 0).rg;
+  return uSigFloat > .5 ? v : (v - .3) / .4;
+}
+void main(){
+  int n = int(gl_FragCoord.x), y = int(gl_FragCoord.y);
+  int st = uStepSig > 1.5 ? 2 : 1;
+  float Y = 0.; vec2 uv = vec2(0.);
+  if (uMode > 2.5){           // RGB: no NTSC/PAL at all, only amplifier bandwidth
+    float xs = (float(n) + .5) / uSPP;
+    vec3 acc = vec3(0.); float ws = 0.;
+    for (int k = -6; k <= 6; k++){ float fk = float(k); float w = exp(-.5 * fk * fk / (uRGBSigma * uRGBSigma)); acc += w * srcPix(xs + fk / uSPP, y); ws += w; }
+    vec3 c = acc / ws;
+    Y = dot(c, vec3(.299, .587, .114)); uv = vec2(.492 * (c.b - Y), .877 * (c.r - Y));
+  } else {
+    bool sv = uMode > 1.5;
+    bool comb = uComb > .5 && !sv;
+    vec2 uvp = vec2(0.);
+    float vs = vSign(y), vsp = vSign(y - st);
+    for (int k = 0; k < 41; k++){
+      int nn = n + k - 20;
+      vec2 s0 = sig(nn, y);
+      float ph = phaseAt(float(nn), y) + uTint;
+      vec2 car = vec2(2. * sin(ph), 2. * vs * cos(ph));
+      if (sv){
+        Y += uKY[k] * s0.x;
+        uv += uKC[k] * s0.y * car;
+      } else if (comb){
+        float s1 = sig(nn, y - st).x;
+        Y += uKY[k] * .5 * (s0.x + s1);
+        uv += uKC[k] * .5 * (s0.x - s1) * car;
+      } else {
+        Y += uKY[k] * s0.x;
+        uv += uKC[k] * s0.x * car;
+      }
+      if (uPAL > .5){
+        vec2 sp = sig(nn, y - st);
+        float php = phaseAt(float(nn), y - st) + uTint;
+        uvp += uKC[k] * (sv ? sp.y : sp.x) * vec2(2. * sin(php), 2. * vsp * cos(php));
+      }
+    }
+    if (!sv && !comb && uNotch > 0.){
+      // Trap filter: take the chroma band back out of luma by re-modulating the decoded chroma
+      float phn = phaseAt(float(n), y) + uTint;
+      Y -= uNotch * uKYfsc * (uv.x * sin(phn) + vs * uv.y * cos(phn));
+    }
+    if (uPAL > .5) uv = .5 * (uv + uvp);
+  }
+  uv *= uSat * uContrast;
+  Y = Y * uContrast + uBright;
+  vec3 rgb = vec3(Y + 1.13983 * uv.y, Y - .39465 * uv.x - .58060 * uv.y, Y + 2.03211 * uv.x);
+  o = vec4(clamp(rgb, 0., 1.), 1.);
+}`;
+
+// Halation: light scattered inside the thick glass
+const GLOWH_FS = HDR + `
+uniform sampler2D uDec; uniform vec2 uGSize; uniform float uGamma;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uGSize;
+  vec3 acc = vec3(0.); float ws = 0.;
+  for (int k = -6; k <= 6; k++){
+    float w = exp(-.5 * float(k * k) / 9.);
+    vec2 p = uv + vec2(float(k) / uGSize.x, 0.);
+    vec3 c = .5 * (texture(uDec, p - vec2(.25 / uGSize.x, 0.)).rgb + texture(uDec, p + vec2(.25 / uGSize.x, 0.)).rgb);
+    acc += w * pow(c, vec3(uGamma)); ws += w;
+  }
+  o = vec4(acc / ws, 1.);
+}`;
+const GLOWV_FS = HDR + `
+uniform sampler2D uTex; uniform vec2 uGSize;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uGSize;
+  vec3 acc = vec3(0.); float ws = 0.;
+  for (int k = -6; k <= 6; k++){ float w = exp(-.5 * float(k * k) / 9.); acc += w * texture(uTex, uv + vec2(0., float(k) / uGSize.y)).rgb; ws += w; }
+  o = vec4(acc / ws, 1.);
+}`;
+
+// Tube geometry shared by the CRT and present passes
+const GEO = `
+uniform vec2 uRes; uniform float uZoom; uniform vec2 uPan; uniform vec4 uTube; uniform vec2 uCurv; uniform float uCorner;
+uniform float uDbl;   // beam lines per source line: 2 for VGA line doubling
+vec2 screenQ(){ vec2 q = gl_FragCoord.xy / uRes; q.y = 1. - q.y; return q; }
+vec2 zoomQ(vec2 q){ return (q - .5) / uZoom + .5 + uPan; }
+vec3 tubeMap(vec2 qz){
+  vec2 c = (qz - uTube.xy) / uTube.zw * 2. - 1.;
+  c *= 1. + uCurv * (c.yx * c.yx);
+  vec2 q = abs(c) - 1. + uCorner;
+  float d = length(max(q, 0.)) + min(max(q.x, q.y), 0.) - uCorner;
+  return vec3(c * .5 + .5, d);
+}
+float tubePx(){ return 2. / (uTube.z * uRes.x * uZoom); }
+`;
+
+// Pass 3: electron beam + phosphor mask + glass, at screen resolution
+const CRT_FS = HDR + COMMON + GEO + `
+uniform sampler2D uDec, uGlow, uPrev;
+uniform float uSrcW, uSrcH, uVisLines, uStep, uOffset, uOverscan;
+uniform vec2 uSigma; uniform float uHSigma, uGamma, uGlowAmt, uVignette, uPersist, uAmbient, uAccumF, uJitter, uSeed;
+uniform float uMaskType, uMaskStr, uMaskPitch, uMaskAvg;
+uniform vec3 uWhite; uniform float uConv;
+out vec4 o;
+vec3 lineColor(float i, float x, float conv){
+  if (i < 0. || i >= uSrcH) return vec3(0.);
+  float jit = uJitter > 0. ? (hash13(vec3(i, uSeed, 5.)) - .5) * uJitter / uSrcW : 0.;
+  vec2 tc = vec2(x + jit, (i + .5) / uSrcH);
+  float h = max(uHSigma, .05) / uSrcW;
+  vec3 cm = texture(uDec, tc - vec2(h, 0.)).rgb, c0 = texture(uDec, tc).rgb, cp = texture(uDec, tc + vec2(h, 0.)).rgb;
+  vec3 c = .25 * cm + .5 * c0 + .25 * cp;
+  // misconvergence: the red and blue beams land a fraction of a pixel off the green one.
+  // First-order shift over a one-pixel baseline, so single-pixel detail is not turned into colour bars.
+  if (abs(conv) > .01){
+    float H1 = 1. / uSrcW;
+    vec3 g = .5 * (texture(uDec, tc + vec2(H1, 0.)).rgb - texture(uDec, tc - vec2(H1, 0.)).rgb);
+    c.r -= g.r * conv; c.b += g.b * conv;
+  }
+  return pow(clamp(c, 0., 1.), vec3(uGamma));
+}
+vec3 maskAt(vec2 mp){
+  if (uMaskType > 3.5){                     // rear-projection screen: lenticular sheet with thin black stripes, no RGB
+    float f = fract(mp.x);
+    return vec3(smoothstep(0., .18, f) * smoothstep(1., .82, f));
+  }
+  float s = mp.x * 3.;
+  if (uMaskType > 2.5){                     // shadow mask: staggered round dots
+    float ci = floor(s), fx = fract(s);
+    float fy = fract(mp.y * 1.732 + mod(ci, 2.) * .5);
+    float dt = smoothstep(.52, .30, length(vec2(fx - .5, fy - .5)));
+    float chn = mod(ci, 3.);
+    return vec3(chn < .5 ? dt : 0., (chn > .5 && chn < 1.5) ? dt : 0., chn > 1.5 ? dt : 0.);
+  }
+  vec3 m;
+  for (int ch = 0; ch < 3; ch++){
+    float d = abs(fract((s - (float(ch) + .5)) / 3. + .5) - .5) * 3.;
+    m[ch] = smoothstep(.75, .35, d);
+  }
+  if (uMaskType > 1.5){                     // slot mask: horizontal breaks, staggered per triad column
+    float col = floor(mp.x);
+    float yy = fract(mp.y * .5 + mod(col, 2.) * .5);
+    m *= smoothstep(0., .12, yy) * smoothstep(1., .88, yy);
+  }
+  return m;
+}
+vec3 shoulder(vec3 x){ const float k = .8; vec3 e = max(x - k, 0.); return min(x, vec3(k)) + (1. - k) * (1. - exp(-e / (1. - k))); }
+void main(){
+  vec2 q = screenQ(); vec2 qz = zoomQ(q);
+  vec3 tm = tubeMap(qz);
+  float px = tubePx();
+  float inside = 1. - smoothstep(-px, px, tm.z);
+  vec3 col = vec3(0.);
+  if (inside > 0.){
+    vec2 ut = tm.xy;
+    vec2 ua = (ut - .5) * (1. - uOverscan) + .5;
+    float BH = uSrcH * uDbl;
+    float Lf = ua.y * uVisLines - (uVisLines - BH) * .5;
+    float u = (Lf - uOffset - .5) / uStep;
+    float j0 = floor(u);
+    vec2 cc = ut * 2. - 1.;
+    // convergence error grows toward the edges, as on a real tube
+    float convH = clamp(uConv * (.35 + .65 * cc.x * abs(cc.x)) * uSrcW / 320., -1., 1.);
+    float convV = uConv * .5 * (.3 + .7 * cc.y * abs(cc.y));
+    for (int k = -1; k <= 2; k++){
+      float j = j0 + float(k);
+      float i = j * uStep + uOffset;
+      vec3 lc = lineColor(floor(i / uDbl), ua.x, convH);
+      vec3 sg = mix(vec3(uSigma.x), vec3(uSigma.y), sqrt(lc));
+      vec3 d = vec3(u - j) + vec3(convV, 0., -convV);
+      col += lc * exp(-.5 * d * d / (sg * sg)) / (sg * 2.5066283);
+    }
+    col *= smoothstep(-.002, .002, ua.x) * smoothstep(1.002, .998, ua.x);
+    // phosphor mask, supersampled 2x2 to keep moire down
+    float pitchPx = uMaskPitch * uZoom;
+    float str = uMaskStr * smoothstep(1.6, 2.6, pitchPx);
+    if (uMaskType > .5 && str > 0.){
+      vec2 mp = ut * uTube.zw * uRes / uMaskPitch;
+      float dp = .25 / pitchPx;
+      vec3 m = .25 * (maskAt(mp + vec2(-dp, -dp)) + maskAt(mp + vec2(dp, -dp)) + maskAt(mp + vec2(-dp, dp)) + maskAt(mp + vec2(dp, dp)));
+      col *= mix(vec3(1. - str), vec3(1.), m) / mix(1. - str, 1., uMaskAvg);
+    }
+    if (uMaskType > .5 && uMaskType < 1.5){   // aperture grille: the two horizontal damper wires
+      float hp = uTube.w * uRes.y * uZoom;
+      float sw = max(.45, hp / 4000.);
+      float d1 = (ut.y - 1. / 3.) * hp, d2 = (ut.y - 2. / 3.) * hp;
+      col *= 1. - .2 * (exp(-.5 * d1 * d1 / (sw * sw)) + exp(-.5 * d2 * d2 / (sw * sw)));
+    }
+    col *= uWhite;
+    // halation: light diffused in the glass. Energy-conserving, so it spreads light instead of adding a veil.
+    float gy = Lf / BH;
+    float gin = smoothstep(-.03, .03, gy) * smoothstep(1.03, .97, gy) * smoothstep(-.03, .03, ua.x) * smoothstep(1.03, .97, ua.x);
+    col = mix(col, texture(uGlow, vec2(ua.x, gy)).rgb * uWhite, uGlowAmt * gin);
+    col = shoulder(col);
+    float r2 = clamp(dot(cc, cc) * .5, 0., 1.);
+    col *= 1. - uVignette * pow(r2, 1.6);
+    col += uAmbient * vec3(.80, .92, .87);
+    col *= inside;
+  }
+  vec3 prev = texelFetch(uPrev, ivec2(gl_FragCoord.xy), 0).rgb;
+  if (uAccumF < .5) prev *= prev;
+  col = max(col, prev * uPersist);
+  o = vec4(uAccumF > .5 ? col : sqrt(col), 1.);
+}`;
+
+// Pass 4: present. Bezel with screen reflection, LCD comparison, linear -> display.
+const PRES_FS = HDR + COMMON + GEO + `
+uniform sampler2D uAccum, uSrc, uGlow;
+uniform ivec2 uSrcSize; uniform float uFlip, uAccumF, uCompare, uSplit, uSrcW, uSrcH, uVisLines, uOverscan;
+uniform vec3 uBezel;
+out vec4 o;
+void main(){
+  vec2 q = screenQ(); vec2 qz = zoomQ(q);
+  vec3 tm = tubeMap(qz);
+  float px = tubePx();
+  vec3 col = texelFetch(uAccum, ivec2(gl_FragCoord.xy), 0).rgb;
+  if (uAccumF < .5) col *= col;
+  float outside = smoothstep(-px, px, tm.z);
+  if (outside > 0.){
+    float dEdge = max(tm.z, 0.);
+    vec3 bez = uBezel * (.75 + .5 * (1. - q.y));
+    bez *= .55 + .45 * smoothstep(0., .05, dEdge);
+    vec2 ut = tm.xy; vec2 cl = clamp(ut, 0., 1.); vec2 mir = cl - (ut - cl);
+    vec2 ua = (mir - .5) * (1. - uOverscan) + .5;
+    float Lf = ua.y * uVisLines - (uVisLines - uSrcH * uDbl) * .5;
+    bez += texture(uGlow, vec2(ua.x, Lf / (uSrcH * uDbl))).rgb * .30 * exp(-dEdge * 34.);
+    col = mix(col, bez, outside);
+  }
+  if (uCompare > .5){
+    if (q.x < uSplit){
+      vec2 uf = (qz - uTube.xy) / uTube.zw;
+      vec3 raw = uBezel;
+      if (all(greaterThanEqual(uf, vec2(0.))) && all(lessThanEqual(uf, vec2(1.)))){
+        raw = vec3(0.);
+        vec2 ua = (uf - .5) * (1. - uOverscan) + .5;
+        float Lf = ua.y * uVisLines - (uVisLines - uSrcH * uDbl) * .5;
+        if (ua.x >= 0. && ua.x < 1. && Lf >= 0. && Lf < uSrcH * uDbl){
+          int x = int(ua.x * uSrcW); int y = int(Lf / uDbl);
+          int yy = uFlip > .5 ? uSrcSize.y - 1 - y : y;
+          raw = pow(texelFetch(uSrc, ivec2(x, yy), 0).rgb, vec3(2.2));
+        }
+      }
+      col = raw;
+    }
+    float dl = abs(q.x - uSplit) * uRes.x;
+    col = mix(col, vec3(.70, .58, .10), smoothstep(1.6, .6, dl));
+  }
+  vec3 c = pow(max(col, 0.), vec3(1. / 2.2));
+  c += (hash12(gl_FragCoord.xy) - .5) / 255.;
+  o = vec4(c, 1.);
+}`;
+
+// 3D renderer (PS1: affine textures, vertex snapping, 15-bit + 4x4 dither; PS2: perspective-correct, trilinear)
+const MESH_VS = HDR + `
+in vec3 aPos; in vec2 aUV; in vec3 aCol;
+uniform mat4 uProj, uView, uModel; uniform vec2 uRes; uniform float uPS1; uniform vec2 uFog;
+out vec3 vCol; out vec2 vUVw; out float vW; out vec2 vUV; out float vFog;
+void main(){
+  vec4 vp = uView * (uModel * vec4(aPos, 1.));
+  vec4 clip = uProj * vp;
+  if (uPS1 > .5 && clip.w > 0.){
+    vec2 hr = uRes * .5;
+    vec2 ndc = floor(clip.xy / clip.w * hr + .5) / hr;
+    clip.xy = ndc * clip.w;
+  }
+  vFog = clamp((-vp.z - uFog.x) / (uFog.y - uFog.x), 0., 1.);
+  vCol = aCol; vUV = aUV; vUVw = aUV * clip.w; vW = clip.w;
+  gl_Position = clip;
+}`;
+const MESH_FS = HDR + `
+in vec3 vCol; in vec2 vUVw; in float vW; in vec2 vUV; in float vFog;
+uniform sampler2D uTex; uniform float uPS1; uniform vec3 uFogCol;
+out vec4 o;
+const float DT[16] = float[16](-4., 0., -3., 1., 2., -2., 3., -1., -3., 1., -4., 0., 3., -1., 2., -2.);
+void main(){
+  vec2 uv = uPS1 > .5 ? vUVw / vW : vUV;
+  vec3 c = texture(uTex, uv).rgb * vCol;
+  c = mix(c, uFogCol, vFog);
+  if (uPS1 > .5){
+    ivec2 p = ivec2(gl_FragCoord.xy) & 3;
+    c = floor(clamp(c * 255. + DT[p.y * 4 + p.x], 0., 255.) / 8.) / 31.;
+  }
+  o = vec4(clamp(c, 0., 1.), 1.);
+}`;
+const SKY_FS = HDR + `
+uniform vec2 uRes; uniform vec3 uTop, uHor; uniform float uPS1;
+out vec4 o;
+const float DT[16] = float[16](-4., 0., -3., 1., 2., -2., 3., -1., -3., 1., -4., 0., 3., -1., 2., -2.);
+void main(){
+  float t = clamp((1. - gl_FragCoord.y / uRes.y) / .62, 0., 1.);
+  vec3 c = mix(uTop, uHor, t * t * (3. - 2. * t));
+  if (uPS1 > .5){ ivec2 p = ivec2(gl_FragCoord.xy) & 3; c = floor(clamp(c * 255. + DT[p.y * 4 + p.x], 0., 255.) / 8.) / 31.; }
+  o = vec4(c, 1.);
+}`;
+// PS2 frame-mode flicker filter: most games blended neighbouring lines to tame interlace twitter
+const DEFL_FS = HDR + `
+uniform sampler2D uTex; uniform ivec2 uSize;
+out vec4 o;
+void main(){
+  ivec2 p = ivec2(gl_FragCoord.xy);
+  vec3 a = texelFetch(uTex, ivec2(p.x, max(p.y - 1, 0)), 0).rgb, b = texelFetch(uTex, p, 0).rgb, c = texelFetch(uTex, ivec2(p.x, min(p.y + 1, uSize.y - 1)), 0).rgb;
+  o = vec4(.25 * a + .5 * b + .25 * c, 1.);
+}`;
+const HUD_FS = HDR + `
+uniform sampler2D uHud; uniform vec2 uRes;
+out vec4 o;
+void main(){ o = texelFetch(uHud, ivec2(int(gl_FragCoord.x), int(uRes.y - gl_FragCoord.y)), 0); }`;
+
+const P = {
+  enc: program(VS, ENC_FS), dec: program(VS, DEC_FS),
+  gh: program(VS, GLOWH_FS), gv: program(VS, GLOWV_FS),
+  crt: program(VS, CRT_FS), pres: program(VS, PRES_FS),
+  mesh: program(MESH_VS, MESH_FS), sky: program(VS, SKY_FS), hud: program(VS, HUD_FS), defl: program(VS, DEFL_FS)
+};
+
+// ===================================================================
+// FIR design for the TV's filters (frequency sampling + Blackman window)
+// ===================================================================
+const NTAP = 41;
+function designFIR(H, fs) {
+  const M = (NTAP - 1) / 2, h = new Float32Array(NTAP), G = 512, df = (fs / 2) / G;
+  for (let k = 0; k < NTAP; k++) {
+    const n = k - M; let s = 0;
+    for (let i = 0; i <= G; i++) { const f = i * df; const w = (i === 0 || i === G) ? .5 : 1; s += w * H(f) * Math.cos(2 * Math.PI * f * n / fs); }
+    s *= 2 * df / fs;
+    const win = bessel0(3 * Math.sqrt(1 - (n / (M + 1)) ** 2)) / bessel0(3);   // Kaiser, beta 3
+    h[k] = s * win;
+  }
+  let dc = 0; for (const v of h) dc += v;
+  const t = H(0) / dc; for (let k = 0; k < NTAP; k++) h[k] *= t;
+  return h;
+}
+function bessel0(x) { let s = 1, t = 1; for (let k = 1; k < 30; k++) { t *= (x / (2 * k)) ** 2; s += t; } return s; }
+function firResp(h, f, fs) { const M = (h.length - 1) / 2; let s = 0; for (let k = 0; k < h.length; k++) s += h[k] * Math.cos(2 * Math.PI * f * (k - M) / fs); return s; }
+const lp = (f, fc, n) => 1 / Math.sqrt(1 + Math.pow(f / fc, 2 * n));
+
+// ===================================================================
+// State, presets, controls
+// ===================================================================
+const DPR_PITCH = (window.devicePixelRatio || 1) >= 2.5 ? 4 : 3;
+const state = {
+  scene: 'waterfall', system: 'md40', pal: false, preset: 'consumer',
+  cable: 'composite', decoder: 'notch', sharp: .35, sat: 1.25, tint: 0, bright: 0, contrast: 1.05, noise: 0,
+  sigLo: .2, sigHi: .44, hfocus: .5, gamma: 2.4, persist: .08, conv: .4,
+  maskType: 'slot', maskStr: .5, maskPitch: DPR_PITCH, white: 8500,
+  curvX: .045, curvY: .06, glow: .06, vignette: .3, overscan: .05, ambient: .002,
+  compare: false, split: .5, paused: false, steady: false, palUser: false
+};
+const PRESETS = {
+  consumer:  { label: 'Obični TV · composite', v: { cable: 'composite', decoder: 'notch', sharp: .35, noise: 0, sigLo: .2, sigHi: .44, hfocus: .5, persist: .08, conv: .4, maskType: 'slot', maskStr: .5, maskPitch: DPR_PITCH, curvX: .045, curvY: .06, glow: .06, vignette: .3, overscan: .05, ambient: .002, sat: 1.25, contrast: 1.05, white: 8500 } },
+  trinitron: { label: 'Trinitron · S-Video', v: { cable: 'svideo', decoder: 'notch', sharp: .3, noise: 0, sigLo: .18, sigHi: .4, hfocus: .4, persist: .06, conv: .18, maskType: 'aperture', maskStr: .5, maskPitch: DPR_PITCH, curvX: .04, curvY: 0, glow: .05, vignette: .22, overscan: .05, ambient: .001, sat: 1.15, contrast: 1.05, white: 9300 } },
+  pvm:       { label: 'Studijski monitor · RGB', v: { cable: 'rgb', decoder: 'notch', sharp: 0, noise: 0, sigLo: .14, sigHi: .32, hfocus: .3, persist: .04, conv: .05, maskType: 'aperture', maskStr: .6, maskPitch: DPR_PITCH, curvX: .02, curvY: .02, glow: .03, vignette: .15, overscan: .03, ambient: 0, sat: 1.0, contrast: 1.0, white: 6500 } },
+  rf:        { label: 'Stari TV · antenski ulaz', v: { cable: 'rf', decoder: 'notch', sharp: .5, noise: .09, sigLo: .24, sigHi: .5, hfocus: .7, persist: .12, conv: .6, maskType: 'shadow', maskStr: .45, maskPitch: DPR_PITCH, curvX: .07, curvY: .09, glow: .1, vignette: .4, overscan: .06, ambient: .005, sat: 1.15, contrast: 1.05, white: 7500 } },
+  // Arcade CRT projector (three tubes onto a flat screen): no mask, big convergence error, soft focus, grey blacks, hot centre
+  proj:      { label: 'CRT projektor · arkada', v: { cable: 'rgb', decoder: 'notch', sharp: 0, noise: 0, sigLo: .24, sigHi: .46, hfocus: .6, persist: .05, conv: .85, maskType: 'lenticular', maskStr: .4, maskPitch: DPR_PITCH, curvX: 0, curvY: 0, glow: .08, vignette: .45, overscan: .02, ambient: .006, sat: 1.18, contrast: 1.0, white: 7500 } },
+  // PC VGA monitor: fine dot mask, sharp RGB, black border around the picture
+  vga:       { label: 'PC monitor · VGA', v: { cable: 'rgb', decoder: 'notch', sharp: 0, noise: 0, sigLo: .3, sigHi: .5, hfocus: .3, persist: .03, conv: .12, maskType: 'shadow', maskStr: .45, maskPitch: Math.max(2.25, DPR_PITCH - .75), curvX: .035, curvY: .045, glow: .04, vignette: .15, overscan: -.06, ambient: .002, sat: 1.08, contrast: 1.05, white: 9300 } },
+  // Commodore 1084S on RGB: 15 kHz like a TV, so scanlines show, but no composite artefacts
+  amiga1084: { label: 'Amiga 1084S · RGB', v: { cable: 'rgb', decoder: 'notch', sharp: .1, noise: 0, sigLo: .2, sigHi: .42, hfocus: .45, persist: .05, conv: .25, maskType: 'slot', maskStr: .5, maskPitch: DPR_PITCH, curvX: .05, curvY: .06, glow: .06, vignette: .25, overscan: .02, ambient: .002, sat: 1.12, contrast: 1.05, white: 8000 } }
+};
+const CABLES = [['rf', 'RF'], ['composite', 'Composite'], ['svideo', 'S-Video'], ['rgb', 'RGB']];
+const CABLE_MODE = { rf: 0, composite: 1, svideo: 2, rgb: 3 };
+const MASKS = [['aperture', 'Aperture grille'], ['slot', 'Slot mask'], ['shadow', 'Shadow mask'], ['lenticular', 'Projekcijsko platno'], ['none', 'Bez maske']];
+const MASK_TYPE = { none: 0, aperture: 1, slot: 2, shadow: 3, lenticular: 4 };
+const MASK_AVG = { none: 1, aperture: .367, slot: .31, shadow: .19, lenticular: .84 };
+
+const STAGES = [
+  { id: 'izvor', name: 'Izvor', sw: 'var(--bar-y)', what: 'Što konzola šalje: rezolucija, takt piksela i televizijska norma.', ctl: [
+    { t: 'select', k: 'system', label: 'Konzola (takt piksela)', opts: Object.entries(SYSTEMS).map(([k, s]) => [k, s.name]) },
+    { t: 'seg', k: 'pal', label: 'Norma', opts: [[false, 'NTSC · 60 Hz'], [true, 'PAL · 50 Hz']] },
+    { t: 'upload' }
+  ]},
+  { id: 'signal', name: 'Signal', sw: 'var(--bar-c)', what: 'Kabel i dekoder u televizoru. Tu nastaju vodopad, prozirni dither i dot crawl.', ctl: [
+    { t: 'seg', k: 'cable', label: 'Kabel', opts: CABLES, kern: 1 },
+    { t: 'seg', k: 'decoder', label: 'Odvajanje boje', opts: [['notch', 'Notch filtar'], ['comb', 'Comb filtar']], kern: 1 },
+    { t: 'note', id: 'decNote' },
+    { t: 'range', k: 'sharp', label: 'Oštrina', min: 0, max: 1, step: .01, f: v => fmt(v, 2), kern: 1 },
+    { t: 'range', k: 'sat', label: 'Boja', min: 0, max: 2, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'tint', label: 'Ton (samo NTSC)', min: -30, max: 30, step: 1, f: v => (v > 0 ? '+' : '') + v + '°' },
+    { t: 'range', k: 'bright', label: 'Svjetlina', min: -.12, max: .12, step: .005, f: v => (v > 0 ? '+' : '') + fmt(v, 3) },
+    { t: 'range', k: 'contrast', label: 'Kontrast', min: .6, max: 1.4, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'noise', label: 'Šum (RF)', min: 0, max: .3, step: .005, f: v => fmt(v, 3) }
+  ]},
+  { id: 'snop', name: 'Snop', sw: 'var(--bar-g)', what: 'Elektronski snop crta liniju po liniju. Širina mu ovisi o svjetlini.', ctl: [
+    { t: 'range', k: 'sigLo', label: 'Širina snopa u tami', min: .08, max: .4, step: .005, f: v => fmt(v, 3) },
+    { t: 'range', k: 'sigHi', label: 'Širina snopa na bijelom', min: .2, max: .7, step: .005, f: v => fmt(v, 3) },
+    { t: 'range', k: 'hfocus', label: 'Vodoravni fokus (px)', min: 0, max: 1.5, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'gamma', label: 'Gama cijevi', min: 2.0, max: 2.8, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'persist', label: 'Naknadni sjaj fosfora', min: 0, max: .8, step: .01, f: v => fmt(v, 2) }
+  ]},
+  { id: 'maska', name: 'Maska', sw: 'var(--bar-m)', what: 'Rešetka crvenih, zelenih i plavih fosfora iza stakla.', ctl: [
+    { t: 'seg', k: 'maskType', label: 'Vrsta', opts: MASKS },
+    { t: 'range', k: 'maskStr', label: 'Jačina', min: 0, max: 1, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'maskPitch', label: 'Korak trijade (px)', min: 2, max: 10, step: .25, f: v => fmt(v, 2) },
+    { t: 'range', k: 'white', label: 'Bijela točka', min: 6500, max: 9300, step: 100, f: v => v + ' K' }
+  ]},
+  { id: 'staklo', name: 'Staklo', sw: 'var(--bar-r)', what: 'Zakrivljena cijev, sjaj u debelom staklu i odsjaj sobe.', ctl: [
+    { t: 'range', k: 'curvX', label: 'Zakrivljenost vodoravno', min: 0, max: .15, step: .005, f: v => fmt(v, 3) },
+    { t: 'range', k: 'curvY', label: 'Zakrivljenost okomito', min: 0, max: .15, step: .005, f: v => fmt(v, 3) },
+    { t: 'range', k: 'glow', label: 'Sjaj u staklu', min: 0, max: .4, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'vignette', label: 'Tamniji rubovi', min: 0, max: .7, step: .01, f: v => fmt(v, 2) },
+    { t: 'range', k: 'overscan', label: 'Overscan (minus: crni rub)', min: -.08, max: .12, step: .005, f: v => Math.round(v * 100) + ' %' },
+    { t: 'range', k: 'ambient', label: 'Odsjaj sobe (posivljuje crnu)', min: 0, max: .03, step: .001, f: v => fmt(v, 3) }
+  ]}
+];
+
+let kernDirty = true, pipeDirty = true;
+const binders = [];
+function buildPanel() {
+  const panel = $('#panel');
+  STAGES.forEach((st, si) => {
+    const card = document.createElement('div');
+    card.className = 'stage'; card.style.setProperty('--sw', st.sw);
+    card.innerHTML = `<h2><span class="sw"></span>${st.name}<span class="step">${si + 1}/${STAGES.length}</span></h2><p class="what">${st.what}</p>`;
+    for (const c of st.ctl) {
+      const el = document.createElement('div'); el.className = 'ctl';
+      if (c.t === 'range') {
+        const id = 'c_' + c.k;
+        el.innerHTML = `<div class="row"><label for="${id}">${c.label}</label><output id="${id}_o"></output></div><input type="range" id="${id}" min="${c.min}" max="${c.max}" step="${c.step}">`;
+        const inp = el.querySelector('input'), out = el.querySelector('output');
+        inp.addEventListener('input', () => { state[c.k] = parseFloat(inp.value); out.textContent = c.f(state[c.k]); if (c.kern) kernDirty = true; markCustom(); });
+        binders.push(() => { inp.value = state[c.k]; out.textContent = c.f(state[c.k]); if (c.k === 'tint') inp.disabled = state.pal; });
+      } else if (c.t === 'seg') {
+        el.innerHTML = `<span class="lab">${c.label}</span><div class="seg" role="group" aria-label="${c.label}"></div>`;
+        const seg = el.querySelector('.seg');
+        for (const [val, lab] of c.opts) {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = lab;
+          b.addEventListener('click', () => { state[c.k] = val; if (c.k === 'pal') { pipeDirty = true; state.palUser = val; if (val) state.tint = 0; } if (c.kern) kernDirty = true; if (c.k !== 'pal') markCustom(); syncUI(); });
+          seg.appendChild(b);
+          binders.push(() => { b.setAttribute('aria-pressed', String(state[c.k] === val)); });
+        }
+      } else if (c.t === 'select') {
+        const id = 'c_' + c.k;
+        el.innerHTML = `<label for="${id}">${c.label}</label><select id="${id}">${c.opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`;
+        const sel = el.querySelector('select');
+        sel.addEventListener('change', () => { state[c.k] = sel.value; pipeDirty = true; syncUI(); });
+        binders.push(() => { sel.value = state[c.k]; });
+      } else if (c.t === 'note') {
+        el.innerHTML = `<p class="note" id="${c.id}" hidden></p>`;
+      } else if (c.t === 'upload') {
+        el.className = 'upl';
+        el.innerHTML = `<button type="button" class="tbtn" id="uplBtn">Učitaj screenshot igre</button><small>Ili povuci sliku na ekran, ili je zalijepi. Najbolje bez filtera emulatora, u izvornoj ili cjelobrojno povećanoj rezoluciji.</small><p class="detect" id="detect" hidden></p>`;
+        el.querySelector('#uplBtn').addEventListener('click', () => $('#file').click());
+      }
+      card.appendChild(el);
+    }
+    panel.appendChild(card);
+  });
+  const pr = $('#presets');
+  for (const [k, p] of Object.entries(PRESETS)) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = p.label;
+    b.addEventListener('click', () => applyPreset(k));
+    pr.appendChild(b);
+    binders.push(() => b.setAttribute('aria-pressed', String(state.preset === k)));
+  }
+}
+function markCustom() { if (state.preset) { state.preset = null; binders.forEach(f => f()); } }
+function applyPreset(k) { Object.assign(state, PRESETS[k].v); state.preset = k; kernDirty = true; syncUI(); }
+function syncUI() { binders.forEach(f => f()); updateReadout(); }
+
+// ===================================================================
+// Scenes
+// ===================================================================
+const scenes = {};
+
+// ---------- 16-bit waterfall (Mega Drive H40, 320x224) ----------
+scenes.waterfall = (() => {
+  const W = 320, H = 224, base = PB(W, H), pb = PB(W, H), rnd = rng(7);
+  const sky = [[40,64,200],[64,96,212],[96,132,226],[128,164,236],[152,190,242],[180,212,248],[204,228,252],[222,238,255]];
+  for (let y = 0; y < 128; y++) {
+    const bh = 16, b = Math.min(7, Math.floor(y / bh)), nb = Math.min(7, b + 1), inB = y - b * bh;
+    for (let x = 0; x < W; x++) {
+      let c = sky[b];
+      if (inB >= bh - 3 && b < 7) { const dens = [.25, .5, .75][inB - (bh - 3)]; if (BAYER4[(y & 3) * 4 + (x & 3)] / 16 < dens) c = sky[nb]; }
+      base.px(x, y, MD(...c));
+    }
+  }
+  // far mountains with dithered haze edge
+  for (let x = 0; x < W; x++) {
+    const a = x * .029 + .4, b2 = x * .071 + 2.1;
+    const top = Math.round(84 + 9 * Math.sin(a) + 6 * Math.sin(b2) + 2.5 * Math.sin(x * .19));
+    const slope = 9 * .029 * Math.cos(a) + 6 * .071 * Math.cos(b2);
+    for (let y = top; y < 150; y++) {
+      if (y < top + 2 && ((x + y) & 1)) continue;
+      let c = slope > .04 ? [100,108,180] : [128,140,208];
+      if (y > top + 16) c = [108,124,192];
+      base.px(x, y, MD(...c));
+    }
+  }
+  // jungle canopy
+  const canopy = [];
+  for (let x = 0; x < W; x++) {
+    const top = Math.round(118 + 7 * Math.sin(x * .047 + 1.3) + 4 * Math.sin(x * .13 + .2) + 2 * Math.sin(x * .37));
+    canopy[x] = top;
+    for (let y = top; y < H; y++) base.px(x, y, y === top ? MD(80,176,80) : (y < top + 3 ? MD(48,140,64) : MD(24,96,48)));
+  }
+  for (let i = 0; i < 300; i++) { const x = (rnd() * W) | 0, y = canopy[x] + 3 + ((rnd() * 40) | 0), r = 1.2 + rnd() * 1.5; base.ellipse(x, y, r, r * .8, MD(44,132,60)); base.px(x - 1, y - 1, MD(88,176,80)); }
+  // rock cliff
+  const cliffL = y => 150 + Math.round(3 * Math.sin(y * .21) + 2 * Math.sin(y * .53));
+  const ROCK = [MD(146,110,82), MD(128,96,72)], RHI = MD(190,150,112), RDK = MD(96,64,48), RDK2 = MD(64,40,32);
+  for (let y = 30; y < 200; y++) {
+    const row = Math.floor((y - 30) / 18), ry = (y - 30) % 18;
+    for (let x = cliffL(y); x < W; x++) {
+      const off = (row * 13) % 29, bx = Math.floor((x + off) / 32), rx = (x + off) % 32;
+      let c = ROCK[hash2(bx, row) < .5 ? 0 : 1];
+      if (ry === 0 || rx === 0) c = RHI;
+      if (ry === 17 || rx === 31) c = RDK;
+      if (hash2(x, y) < .05) c = RDK;
+      if (x < cliffL(y) + 2) c = RDK2;
+      base.px(x, y, c);
+    }
+  }
+  // cliff-top grass
+  for (let x = cliffL(30) - 2; x < W; x++) {
+    const t = 25 - (hash2(x, 3) < .3 ? 1 : 0);
+    for (let y = t; y < 32; y++) base.px(x, y, y === t ? MD(150,224,110) : (y < 30 ? MD(72,184,72) : MD(32,104,48)));
+  }
+  // vines
+  for (const vx of [158, 171, 262, 292, 305]) {
+    const len = 26 + ((hash2(vx, 9) * 50) | 0);
+    for (let y = 32; y < 32 + len; y++) { base.px(vx, y, MD(24,96,40)); if ((y & 3) === 0) { const s = ((y >> 2) & 1) ? 1 : -1; base.px(vx + s, y, MD(72,168,64)); base.px(vx + 2 * s, y, MD(72,168,64)); base.px(vx + s, y + 1, MD(48,128,56)); } }
+  }
+  // pool body
+  for (let y = 184; y < 204; y++) for (let x = 146; x < W; x++) base.px(x, y, y < 186 ? MD(120,170,240) : MD(40,92,196));
+  // stone ground
+  const STONE = MD(118,132,112), SHI = MD(160,172,140), SDK = MD(72,86,72), SMORT = MD(44,52,44);
+  const stones = (x0, y0, x1, y1) => {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const row = Math.floor((y - y0) / 16), ly = (y - y0) % 16, lx = (x + (row & 1) * 8) % 16;
+      let c = STONE;
+      if (lx === 0 || ly === 0) c = SMORT; else if (lx === 1 || ly === 1) c = SHI; else if (lx === 15 || ly === 15) c = SDK; else if (hash2(x * 3, y) < .07) c = SDK;
+      base.px(x, y, c);
+    }
+  };
+  stones(0, 176, 150, H); stones(146, 204, W, H);
+  const grass = (x0, x1, y) => {
+    for (let x = x0; x < x1; x++) {
+      base.px(x, y, MD(150,224,110)); base.px(x, y + 1, MD(72,184,72)); base.px(x, y + 2, MD(72,184,72)); base.px(x, y + 3, MD(32,104,48));
+      if (hash2(x, y) < .35) base.px(x, y - 1, MD(72,184,72));
+      if (hash2(x, y + 7) < .12) { base.px(x, y - 1, MD(150,224,110)); base.px(x, y - 2, MD(72,184,72)); }
+    }
+  };
+  grass(0, 152, 172);
+  stones(36, 128, 100, 140); grass(36, 100, 124);
+  for (let y = 124; y < 141; y++) { base.px(35, y, SMORT); base.px(100, y, SMORT); }
+  for (let x = 35; x <= 100; x++) base.px(x, 140, SMORT);
+  // sprites
+  const cloud = (w, h, blobs) => { const s = PB(w, h);
+    for (const [x, y, r] of blobs) s.ellipse(x, y, r, r * .85, MD(255,255,255));
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = s.get(x, y); if (!cA(c)) continue; if (y > h * .62) s.px(x, y, MD(176,196,232)); else if (y > h * .52 && ((x + y) & 1)) s.px(x, y, MD(176,196,232)); }
+    return s; };
+  const cl1 = cloud(64, 26, [[12, 16, 8], [26, 11, 11], [42, 13, 10], [54, 17, 7]]);
+  const cl2 = cloud(44, 20, [[10, 12, 7], [22, 9, 9], [34, 12, 7]]);
+  const robot = makeSprite(16, 27, MD, MD(0,0,0), s => {
+    s.rect(7, 2, 1, 4, MD(146,146,160)); s.ellipse(7.5, 2, 1.6, 1.6, MD(255,219,73));
+    s.ellipse(8, 9.5, 6.5, 5, MD(240,128,40));
+    s.rect(6, 14, 4, 1, MD(90,90,110)); s.rect(4, 15, 8, 6, MD(182,182,200));
+    s.rect(2, 15, 2, 5, MD(182,182,200)); s.rect(12, 15, 2, 5, MD(182,182,200));
+    s.rect(5, 21, 2, 3, MD(90,90,110)); s.rect(9, 21, 2, 3, MD(90,90,110));
+    s.rect(4, 24, 3, 1, MD(240,128,40)); s.rect(9, 24, 3, 1, MD(240,128,40));
+  }, s => {
+    s.rect(4, 8, 8, 3, MD(0,96,146)); s.rect(4, 8, 7, 2, MD(73,219,255)); s.px(5, 8, MD(255,255,255));
+    s.px(7, 17, MD(255,36,36)); s.px(8, 17, MD(255,36,36)); s.rect(4, 19, 8, 1, MD(90,90,110));
+  });
+  const gem = (c1, c2) => makeSprite(9, 12, MD, MD(0,0,0), s => { for (let y = 1; y <= 10; y++) { const hw = y <= 4 ? y : 10 - y + 1; s.rect(4.5 - hw * .75 + .5, y, Math.max(1, Math.round(hw * 1.5)), 1, c1); } },
+    s => { s.px(3, 3, MD(255,255,255)); s.px(4, 6, c2); s.px(5, 7, c2); });
+  const gems = [gem(MD(73,219,255), MD(36,146,219)), gem(MD(255,109,219), MD(182,36,146)), gem(MD(146,255,109), MD(36,182,73))];
+  const sparkle = fromStrings(['..w..', '..w..', 'ww.ww', '..w..', '..w..'], { w: MD(255,255,255) });
+  // waterfall streak texture
+  const ST = new Float32Array(64 * 256);
+  for (let c = 0; c < 64; c++) { let y = 0; while (y < 256) { const len = 6 + ((rnd() * 28) | 0), v = rnd(); for (let i = 0; i < len && y < 256; i++, y++) ST[c * 256 + y] = v; } }
+  const WF = [MD(232,244,255), MD(168,208,250), MD(120,168,240)];
+  const WFD = [MD(192,224,252), MD(136,184,244), MD(96,144,232)];
+  const wx0 = 196, wx1 = 244, wy0 = 28, wy1 = 186;
+  return {
+    w: W, h: H, sys: 'md40', interlace: false, label: 'Vodopad', tag: '16-bit',
+    draw(t) {
+      const fr = Math.floor(t * 60);
+      pb.copy(base);
+      pb.blit(cl1, Math.round(((40 - t * 5) % (W + 80) + W + 80) % (W + 80) - 70), 14);
+      pb.blit(cl2, Math.round(((210 - t * 3.5) % (W + 60) + W + 60) % (W + 60) - 50), 34);
+      // waterfall: alternating 1px columns. Odd columns at the edges let the rock show through.
+      const off = Math.floor(t * 110);
+      for (let y = wy0; y < wy1; y++) for (let x = wx0; x < wx1; x++) {
+        const edge = Math.min(x - wx0, wx1 - 1 - x);
+        const v = ST[((x >> 1) & 63) * 256 + ((y - off) & 255)];
+        const lv = v > .72 ? 0 : v > .3 ? 1 : 2;
+        if ((x & 1) === 0) pb.px(x, y, WF[lv]);
+        else if (edge >= 5) pb.px(x, y, WFD[lv]);
+      }
+      // mist at the base
+      for (let y = 176; y < 194; y++) for (let x = wx0 - 14; x < wx1 + 14; x++) {
+        const d = Math.abs(x - (wx0 + wx1) / 2) / 38 + Math.abs(y - 184) / 12;
+        if (((x + y + fr) & 1) === 0 && hash2(x, y + (fr >> 2)) > d * .9) pb.px(x, y, WF[0]);
+      }
+      // ripples
+      for (let y = 188; y < 204; y += 3) for (let x = 146; x < W; x++) if (((x + y * 7 + (fr >> 1) * (y & 4 ? 1 : -1)) % 23 + 23) % 23 < 4) pb.px(x, y, MD(150,196,248));
+      // fake-transparent foreground water (checkerboard dither over stone)
+      for (let y = 208; y < H; y++) for (let x = 232; x < W; x++) { if (((x + y) & 1) === 0) pb.px(x, y, y === 208 ? MD(200,228,255) : MD(48,108,216)); }
+      gems.forEach((g, i) => pb.blit(g, 46 + i * 16, 104 + Math.round(Math.sin(t * 3 + i * 1.3) * 1.5)));
+      const sp = (fr >> 4) % 3; if ((fr & 15) < 8) pb.blit(sparkle, 46 + sp * 16 + 5, 100);
+      pb.blit(robot, 92, 146 + ((fr >> 5) & 1));
+      const Y = MD(255,219,0), Wt = MD(255,255,255), K = MD(0,0,0);
+      text(pb, 'SCORE', 14, 10, Y, { shadow: K }); text(pb, '12400', 56, 10, Wt, { shadow: K });
+      text(pb, 'TIME', 14, 22, Y, { shadow: K }); text(pb, '1:' + String(7 + Math.floor(t) % 50).padStart(2, '0'), 56, 22, Wt, { shadow: K });
+      text(pb, 'GEMS', 14, 34, Y, { shadow: K }); text(pb, '23', 56, 34, Wt, { shadow: K });
+      return pb;
+    }
+  };
+})();
+
+// ---------- SNES-style platformer (256x224) ----------
+scenes.platformer = (() => {
+  const W = 256, H = 224, base = PB(W, H), pb = PB(W, H), rnd = rng(21);
+  for (let y = 0; y < 170; y++) { const t = Math.pow(y / 170, 1.25); const c = lerp3([56,88,208], [248,196,160], t); for (let x = 0; x < W; x++) base.px(x, y, SN(...c)); }
+  for (let x = 0; x < W; x++) {
+    const top = Math.round(104 + 13 * Math.sin(x * .041 + .5) + 9 * Math.abs(Math.sin(x * .093 + 1.1)));
+    for (let y = top; y < 176; y++) { let c = [128,100,176]; if (y < top + 3 && top < 104) c = [232,232,248]; else if (y > top + 10) c = [112,88,160]; base.px(x, y, SN(...c)); }
+  }
+  // rounded hills with outline
+  const hills = [[24, 196, 58], [104, 206, 64], [186, 200, 60], [248, 208, 56]];
+  const HC = SN(64,168,80), HOL = SN(24,80,40), HSP = SN(104,200,104);
+  for (const [cx, cy, r] of hills) { base.ellipse(cx, cy, r + 1, r * .8 + 1, HOL); base.ellipse(cx, cy, r, r * .8, HC); for (let i = 0; i < 9; i++) { const a = rnd() * Math.PI, rr = rnd() * r * .7; base.ellipse(cx + Math.cos(a) * rr, cy - Math.sin(a) * rr * .8, 3, 2, HSP); } }
+  // ground
+  for (let y = 184; y < H; y++) for (let x = 0; x < W; x++) {
+    let c;
+    if (y === 184) c = SN(176,240,120); else if (y < 189) c = SN(104,200,64); else if (y === 189) c = SN(48,120,40);
+    else { c = SN(184,120,72); const h = hash2(x >> 1, y >> 1); if (h < .08) c = SN(216,160,104); else if (h > .93) c = SN(136,84,48); if (y > 210) c = scaleC(c, .82, SN); }
+    base.px(x, y, c);
+  }
+  for (let x = 0; x < W; x++) { if (hash2(x, 1) < .4) base.px(x, 183, SN(104,200,64)); if (hash2(x, 2) < .12) { base.px(x, 182, SN(104,200,64)); base.px(x, 181, SN(176,240,120)); } }
+  for (let i = 0; i < 18; i++) { const x = (rnd() * W) | 0; base.px(x, 182, [SN(248,64,64), SN(255,255,255), SN(255,224,64)][i % 3]); base.px(x, 183, SN(48,120,40)); }
+  // boulder with dithered shading
+  const bx = 212, by = 168;
+  base.ellipse(bx, by, 23, 17, SN(40,40,56));
+  for (let y = by - 16; y <= by + 16; y++) for (let x = bx - 22; x <= bx + 22; x++) {
+    const dx = (x + .5 - bx) / 22, dy = (y + .5 - by) / 16; if (dx * dx + dy * dy > 1) continue;
+    const l = -.55 * dx - .65 * dy; const bay = BAYER4[(y & 3) * 4 + (x & 3)] / 16;
+    let c = SN(136,136,152);
+    if (l < -.15 && bay < clamp(-l * 1.4, 0, 1)) c = SN(88,88,108);
+    if (l > .2 && bay < clamp((l - .2) * 2, 0, 1)) c = SN(184,184,200);
+    base.px(x, y, c);
+  }
+  for (let x = 0; x < W; x++) if (cA(base.get(x, 184))) base.px(x, 184, SN(176,240,120));
+  // wooden platforms
+  const plat = (x0, y0, w) => { base.rect(x0 - 1, y0 - 1, w + 2, 10, SN(40,24,16)); base.rect(x0, y0, w, 8, SN(168,104,56)); base.rect(x0, y0, w, 1, SN(224,160,96)); base.rect(x0, y0 + 7, w, 1, SN(112,64,32)); for (let x = x0 + 7; x < x0 + w; x += 8) base.rect(x, y0 + 1, 1, 6, SN(112,64,32)); };
+  plat(36, 132, 48); plat(144, 104, 56);
+  const knight = makeSprite(17, 27, SN, SN(16,16,32), s => {
+    s.rect(7, 0, 3, 3, SN(232,56,56)); s.ellipse(8.5, 7, 5, 5, SN(184,192,208));
+    s.rect(4, 12, 9, 7, SN(56,96,216)); s.rect(2, 13, 2, 5, SN(184,192,208)); s.rect(13, 13, 2, 5, SN(184,192,208));
+    s.rect(5, 19, 3, 4, SN(152,96,56)); s.rect(9, 19, 3, 4, SN(152,96,56)); s.rect(4, 23, 4, 2, SN(96,56,32)); s.rect(9, 23, 4, 2, SN(96,56,32));
+    s.ellipse(2.5, 15.5, 2.5, 3.5, SN(40,72,184)); s.rect(15, 6, 1, 10, SN(224,232,240)); s.rect(14, 15, 3, 1, SN(240,200,64));
+  }, s => { s.rect(6, 7, 6, 1, SN(16,16,32)); s.rect(4, 17, 9, 1, SN(240,200,64)); s.px(2, 15, SN(240,200,64)); s.px(2, 16, SN(240,200,64)); });
+  const slimeA = makeSprite(18, 14, SN, SN(16,48,16), s => s.ellipse(9, 8, 7.5, 5, SN(96,208,72)), s => { s.rect(6, 6, 2, 2, SN(255,255,255)); s.rect(11, 6, 2, 2, SN(255,255,255)); s.px(7, 7, SN(0,0,0)); s.px(12, 7, SN(0,0,0)); s.px(5, 5, SN(208,255,176)); });
+  const slimeB = makeSprite(18, 14, SN, SN(16,48,16), s => s.ellipse(9, 9, 8.5, 4, SN(96,208,72)), s => { s.rect(6, 7, 2, 2, SN(255,255,255)); s.rect(11, 7, 2, 2, SN(255,255,255)); s.px(7, 8, SN(0,0,0)); s.px(12, 8, SN(0,0,0)); });
+  const STAR = ['.....o.....', '....oyo....', '....oyo....', 'ooooyyyoooo', 'oyyyyyyyyyo', '.oyyyyyyyo.', '..oyyyyyo..', '..oyyoyyo..', '.oyyo.oyyo.', '.ooo...ooo.'];
+  const star = fromStrings(STAR, { o: SN(120,64,0), y: SN(255,224,64) });
+  const starT = fromStrings(['..o..', '.oyo.', '.oyo.', '.oyo.', '.oyo.', '.oyo.', '.oyo.', '.oyo.', '.oyo.', '..o..'], { o: SN(120,64,0), y: SN(255,224,64) });
+  const cloud = (w, h, blobs) => { const s = PB(w, h); for (const [x, y, r] of blobs) s.ellipse(x, y, r + 1, r * .8 + 1, SN(120,136,200)); for (const [x, y, r] of blobs) s.ellipse(x, y, r, r * .8, SN(255,255,255)); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = s.get(x, y); if (c === SN(255,255,255) && y > h * .6) s.px(x, y, SN(208,216,248)); } return s; };
+  const cl1 = cloud(60, 24, [[12, 14, 8], [26, 10, 10], [40, 12, 9], [50, 15, 6]]);
+  const cl2 = cloud(40, 18, [[10, 11, 6], [21, 8, 8], [31, 11, 6]]);
+  return {
+    w: W, h: H, sys: 'snes', interlace: false, label: 'Platformer', tag: 'SNES',
+    draw(t) {
+      const fr = Math.floor(t * 60);
+      pb.copy(base);
+      pb.blit(cl1, Math.round(((30 - t * 6) % (W + 80) + W + 80) % (W + 80) - 66), 26);
+      pb.blit(cl2, Math.round(((170 - t * 4) % (W + 60) + W + 60) % (W + 60) - 46), 52);
+      for (let i = 0; i < 3; i++) { const ph = ((fr >> 3) + i) % 6; pb.blit(ph === 3 ? starT : star, ph === 3 ? 153 + i * 16 : 150 + i * 16, 82 + Math.round(Math.sin(t * 2.5 + i) * 2)); }
+      pb.blit(knight, 52, 158 + ((fr >> 5) & 1));
+      const sq = (fr >> 4) & 1; pb.blit(sq ? slimeB : slimeA, 112, 171);
+      const Wt = SN(255,255,255), K = SN(16,16,40);
+      text(pb, 'STAGE 2-1', 12, 10, Wt, { outline: K });
+      text(pb, 'x03', 12, 22, SN(255,224,64), { outline: K });
+      text(pb, '004200', 196, 10, Wt, { outline: K });
+      text(pb, 'TIME ' + String(287 - Math.floor(t) % 280).padStart(3, '0'), 184, 22, Wt, { outline: K });
+      return pb;
+    }
+  };
+})();
+
+// ---------- Test pattern (320x240) ----------
+scenes.test = (() => {
+  const W = 320, H = 240, pb = PB(W, H);
+  const bars = [[191,191,191],[191,191,0],[0,191,191],[0,191,0],[191,0,191],[191,0,0],[0,0,191]];
+  for (let i = 0; i < 7; i++) pb.rect(Math.round(i * W / 7), 0, Math.round((i + 1) * W / 7) - Math.round(i * W / 7), 72, RGBA(...bars[i]));
+  const rev = [[0,0,191],[0,0,0],[191,0,191],[0,0,0],[0,191,191],[0,0,0],[191,191,191]];
+  for (let i = 0; i < 7; i++) pb.rect(Math.round(i * W / 7), 72, Math.round((i + 1) * W / 7) - Math.round(i * W / 7), 8, RGBA(...rev[i]));
+  const box = (x0, y0, w, h, f) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) pb.px(x, y, f(x, y)); };
+  const Wh = RGBA(255,255,255), Bk = RGBA(0,0,0), Bl = RGBA(48,96,224), Rd = RGBA(224,32,32), Gy = RGBA(170,170,170);
+  box(8, 92, 70, 48, x => (x & 1) ? Bk : Wh);
+  box(86, 92, 70, 48, x => (x & 1) ? Bl : Wh);
+  box(164, 92, 70, 48, (x, y) => ((x + y) & 1) ? Bl : Rd);
+  box(242, 92, 70, 48, x => (x & 2) ? Bk : Wh);
+  text(pb, '1PX', 34, 144, Gy); text(pb, 'VODOPAD', 100, 144, Gy); text(pb, 'DITHER', 182, 144, Gy); text(pb, '2PX', 268, 144, Gy);
+  for (let x = 8; x < 312; x++) {
+    const v = (x - 8) / 303;
+    for (let y = 158; y < 176; y++) pb.px(x, y, RGBA(Math.round(v * 255), Math.round(v * 255), Math.round(v * 255)));
+    for (let y = 176; y < 194; y++) { const d = [-4, 0, -3, 1, 2, -2, 3, -1, -3, 1, -4, 0, 3, -1, 2, -2][(y & 3) * 4 + (x & 3)]; const q = Math.floor(clamp(v * 255 + d * 2.2, 0, 255) / 32) * 255 / 7; pb.px(x, y, RGBA(q, q * .55, q * .2)); }
+  }
+  text(pb, 'GLATKO', 10, 160, RGBA(255,64,64)); text(pb, '3-BIT + DITHER', 10, 186, RGBA(255,255,255));
+  text(pb, 'ABCDEFGHIJKLM 0123456789', 8, 202, Wh);
+  for (let x = 8; x < 160; x++) { pb.px(x, 216, Wh); pb.px(x, 219, Wh); pb.px(x, 223, Wh); }
+  for (let y = 214; y < 236; y += 2) for (let x = 170; x < 230; x += 2) pb.px(x, y, Wh);
+  for (let a = 0; a < 360; a += .5) pb.px(Math.round(280 + Math.cos(a * Math.PI / 180) * 24), Math.round(220 + Math.sin(a * Math.PI / 180) * 14), RGBA(255,224,64));
+  let uploaded = false;
+  return { w: W, h: H, sys: 'md40', interlace: false, label: 'Testna slika', tag: '320×240', static: true, draw() { return pb; } };
+})();
+
+// ---------- 3D scenes (PS1 240p, PS2 480i) ----------
+const M4 = {
+  persp(fovy, asp, n, f) { const t = 1 / Math.tan(fovy / 2); return new Float32Array([t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0]); },
+  lookAt(e, c, up) {
+    const z = nrm([e[0] - c[0], e[1] - c[1], e[2] - c[2]]), x = nrm(cross(up, z)), y = cross(z, x);
+    return new Float32Array([x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot3(x, e), -dot3(y, e), -dot3(z, e), 1]);
+  },
+  rotY(a, tx, ty, tz) { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, tx, ty, tz, 1]); },
+  id: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+};
+function nrm(v) { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function dot3(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+function makeVAO(arr) {
+  const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arr), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 32, 0);
+  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 32, 12);
+  gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 32, 20);
+  gl.bindVertexArray(null);
+  return { vao, count: arr.length / 8 };
+}
+const world = (() => {
+  const G = { floor: [], wall: [], crate: [], stone: [] }, gemArr = [];
+  const S = 9, WH = 3.6;
+  const LD = nrm([-.45, .82, .36]), torch = [6.9, 1.8, -6.9];
+  const lit = (p, n, ao = 1, tint = [1, 1, 1]) => {
+    const ndl = Math.max(0, dot3(n, LD));
+    let r = .46 + .74 * ndl, g = .48 + .68 * ndl, b = .60 + .50 * ndl;
+    const dd = Math.hypot(p[0] - torch[0], p[1] - torch[1], p[2] - torch[2]);
+    const tl = Math.max(0, 1 - dd / 7) ** 2; r += 1.0 * tl; g += .5 * tl; b += .12 * tl;
+    return [r * ao * tint[0], g * ao * tint[1], b * ao * tint[2]];
+  };
+  const push = (a, p, uv, c) => a.push(p[0], p[1], p[2], uv[0], uv[1], c[0], c[1], c[2]);
+  const quad = (a, Pp, UV, n, aoF, tint) => { const C = Pp.map(p => lit(p, n, aoF ? aoF(p) : 1, tint)); [0, 1, 2, 0, 2, 3].forEach(i => push(a, Pp[i], UV[i], C[i])); };
+  const uv01 = [[0, 1], [1, 1], [1, 0], [0, 0]];
+  const floorAO = p => .5 + .5 * Math.min(1, (S - Math.max(Math.abs(p[0]), Math.abs(p[2]))) / 2.6);
+  for (let x = -S; x < S; x += 2) for (let z = -S; z < S; z += 2) quad(G.floor, [[x, 0, z + 2], [x + 2, 0, z + 2], [x + 2, 0, z], [x, 0, z]], uv01, [0, 1, 0], floorAO);
+  const wallAO = p => .6 + .4 * Math.min(1, p[1] / 1.6);
+  const walls = [{ a: [-S, -S], b: [S, -S], n: [0, 0, 1] }, { a: [S, S], b: [-S, S], n: [0, 0, -1] }, { a: [-S, S], b: [-S, -S], n: [1, 0, 0] }, { a: [S, -S], b: [S, S], n: [-1, 0, 0] }];
+  for (const w of walls) {
+    const segs = S;
+    for (let i = 0; i < segs; i++) {
+      const t0 = i / segs, t1 = (i + 1) / segs;
+      const x0 = lerp(w.a[0], w.b[0], t0), z0 = lerp(w.a[1], w.b[1], t0), x1 = lerp(w.a[0], w.b[0], t1), z1 = lerp(w.a[1], w.b[1], t1);
+      for (let r = 0; r < 2; r++) { const y0 = r * WH / 2, y1 = (r + 1) * WH / 2; quad(G.wall, [[x0, y0, z0], [x1, y0, z1], [x1, y1, z1], [x0, y1, z0]], [[0, -y0 / 2], [1, -y0 / 2], [1, -y1 / 2], [0, -y1 / 2]], w.n, wallAO); }
+      const ox0 = x0 - w.n[0] * .5, oz0 = z0 - w.n[2] * .5, ox1 = x1 - w.n[0] * .5, oz1 = z1 - w.n[2] * .5;
+      quad(G.stone, [[x0, WH, z0], [x1, WH, z1], [ox1, WH, oz1], [ox0, WH, oz0]], [[0, 0], [1, 0], [1, .25], [0, .25]], [0, 1, 0], null, [.95, .95, .95]);
+    }
+  }
+  const box = (a, c, s, tint = [1, 1, 1]) => {
+    const [cx, cy, cz] = c, sx = s[0] / 2, sy = s[1] / 2, sz = s[2] / 2;
+    const F = [
+      [[0, 0, 1], [[-sx, -sy, sz], [sx, -sy, sz], [sx, sy, sz], [-sx, sy, sz]]],
+      [[0, 0, -1], [[sx, -sy, -sz], [-sx, -sy, -sz], [-sx, sy, -sz], [sx, sy, -sz]]],
+      [[1, 0, 0], [[sx, -sy, sz], [sx, -sy, -sz], [sx, sy, -sz], [sx, sy, sz]]],
+      [[-1, 0, 0], [[-sx, -sy, -sz], [-sx, -sy, sz], [-sx, sy, sz], [-sx, sy, -sz]]],
+      [[0, 1, 0], [[-sx, sy, sz], [sx, sy, sz], [sx, sy, -sz], [-sx, sy, -sz]]],
+      [[0, -1, 0], [[-sx, -sy, -sz], [sx, -sy, -sz], [sx, -sy, sz], [-sx, -sy, sz]]]];
+    for (const [n, Pp] of F) quad(a, Pp.map(p => [p[0] + cx, p[1] + cy, p[2] + cz]), uv01, n, null, tint);
+  };
+  box(G.crate, [-7.7, .6, -2.4], [1.2, 1.2, 1.2]); box(G.crate, [-7.6, .6, -1.0], [1.2, 1.2, 1.2], [.9, .9, .85]); box(G.crate, [-7.65, 1.8, -1.7], [1.2, 1.2, 1.2]);
+  box(G.crate, [7.6, .6, 1.6], [1.2, 1.2, 1.2]); box(G.crate, [7.7, .45, 2.9], [.9, .9, .9], [.85, .85, .8]); box(G.crate, [1.8, .6, -7.7], [1.2, 1.2, 1.2]);
+  const pillar = (cx, cz, r, h) => {
+    for (let i = 0; i < 8; i++) {
+      const a0 = i / 8 * Math.PI * 2, a1 = (i + 1) / 8 * Math.PI * 2, nm = nrm([Math.cos((a0 + a1) / 2), 0, Math.sin((a0 + a1) / 2)]);
+      const p0 = [cx + Math.cos(a0) * r, cz + Math.sin(a0) * r], p1 = [cx + Math.cos(a1) * r, cz + Math.sin(a1) * r];
+      for (let k = 0; k < 2; k++) { const y0 = k * h / 2, y1 = (k + 1) * h / 2; quad(G.stone, [[p0[0], y0, p0[1]], [p1[0], y0, p1[1]], [p1[0], y1, p1[1]], [p0[0], y1, p0[1]]], [[i / 4, -y0 / 2], [(i + 1) / 4, -y0 / 2], [(i + 1) / 4, -y1 / 2], [i / 4, -y1 / 2]], nm, wallAO); }
+    }
+    box(G.stone, [cx, h + .15, cz], [r * 2.7, .3, r * 2.7]); box(G.stone, [cx, .15, cz], [r * 2.7, .3, r * 2.7]);
+  };
+  pillar(-5.4, -5.4, .55, 3.4); pillar(5.4, -5.4, .55, 3.4); pillar(-5.4, 5.4, .55, 3.4); pillar(5.4, 5.4, .55, 3.4);
+  box(G.stone, [0, .35, 0], [1.8, .7, 1.8]); box(G.stone, [0, .85, 0], [1.2, .3, 1.2]);
+  const top = [0, .62, 0], bot = [0, -.62, 0], ring = [0, 1, 2, 3].map(i => [Math.cos(i * Math.PI / 2) * .42, 0, Math.sin(i * Math.PI / 2) * .42]);
+  for (let i = 0; i < 4; i++) {
+    const a = ring[i], b = ring[(i + 1) % 4];
+    for (const [tri, base] of [[[top, a, b], [.45, 1.15, 1.3]], [[bot, b, a], [1.25, .45, 1.15]]]) {
+      const n = nrm(cross([tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]], [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]));
+      const k = .55 + .6 * Math.abs(dot3(n, LD)) * ((i & 1) ? .8 : 1);
+      tri.forEach(p => push(gemArr, p, [.5, .5], base.map(v => v * k)));
+    }
+  }
+  return { groups: Object.fromEntries(Object.entries(G).map(([k, a]) => [k, makeVAO(a)])), gem: makeVAO(gemArr) };
+})();
+// procedural 15-bit textures
+const TEX = (() => {
+  const mk = (fn, seed) => { const p = PB(64, 64), r = rng(seed); for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) { const c = fn(x, y, r); p.px(x, y, SN(c[0], c[1], c[2])); } return p; };
+  const floor = mk((x, y, r) => { const tx = x >> 5, ty = y >> 5, lx = x & 31, ly = y & 31; const base = [[150,138,118],[132,124,108],[160,148,124],[140,130,114]][(tx + ty * 2) % 4]; const k = .86 + .22 * r(); if (lx < 2 || ly < 2) return [80,74,64]; if (lx === 2 || ly === 2) return base.map(v => v * 1.18); if (lx === 31 || ly === 31) return base.map(v => v * .7); if (hash2(x * 7, y * 3) < .04) return [96,120,72]; return base.map(v => v * k); }, 3);
+  const brick = mk((x, y, r) => { const row = y >> 3, lx = (x + (row & 1) * 8) & 15, ly = y & 7; const tone = hash2((x + (row & 1) * 8) >> 4, row); const base = tone < .33 ? [158,78,56] : tone < .66 ? [140,68,50] : [170,92,64]; if (ly === 7 || lx === 15) return [96,88,80]; if (ly === 0) return base.map(v => v * 1.2); return base.map(v => v * (.85 + .25 * r())); }, 5);
+  const crate = mk((x, y, r) => { const b = Math.min(x, y, 63 - x, 63 - y); if (b < 4) return b === 0 ? [72,44,24] : [150,100,56]; if (Math.abs(x - y) < 3 || Math.abs(x + y - 63) < 3) return [168,116,64]; const ly = (y - 4) % 14; if (ly === 0) return [96,60,32]; return [128,84,44].map(v => v * (.88 + .2 * r())); }, 7);
+  const stone = mk((x, y, r) => { const g = x & 15; if (g === 0) return [130,116,88]; if (g === 1) return [222,204,160]; if ((y & 31) === 0) return [140,124,96]; return [196,178,138].map(v => v * (.9 + .16 * r())); }, 9);
+  const white = mk(() => [255, 255, 255], 1);
+  const up = p => { const t = makeTexture(64, 64, p.bytes(), gl.LINEAR, gl.REPEAT); gl.generateMipmap(gl.TEXTURE_2D); return t; };
+  return { floor: up(floor), wall: up(brick), crate: up(crate), stone: up(stone), white: up(white) };
+})();
+const SMP = { near: gl.createSampler(), tri: gl.createSampler() };
+for (const [s, mn, mg] of [[SMP.near, gl.NEAREST, gl.NEAREST], [SMP.tri, gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR]]) {
+  gl.samplerParameteri(s, gl.TEXTURE_MIN_FILTER, mn); gl.samplerParameteri(s, gl.TEXTURE_MAG_FILTER, mg);
+  gl.samplerParameteri(s, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.samplerParameteri(s, gl.TEXTURE_WRAP_T, gl.REPEAT);
+}
+function makeHUD(kind) {
+  if (kind === 'ps1') {
+    const p = PB(320, 240), Wt = RGBA(255,255,255), K = RGBA(0,0,0);
+    p.rect(12, 194, 126, 36, RGBA(16,16,64,170));
+    for (let x = 12; x < 138; x++) { p.px(x, 194, RGBA(200,200,255)); p.px(x, 229, RGBA(90,90,160)); }
+    for (let y = 194; y < 230; y++) { p.px(12, y, RGBA(200,200,255)); p.px(137, y, RGBA(90,90,160)); }
+    text(p, 'HP', 18, 200, Wt, { shadow: K }); p.rect(36, 201, 80, 5, RGBA(80,0,0)); p.rect(36, 201, 74, 5, RGBA(64,224,96));
+    text(p, 'MP', 18, 214, Wt, { shadow: K }); p.rect(36, 215, 80, 5, RGBA(0,0,80)); p.rect(36, 215, 46, 5, RGBA(80,140,255));
+    text(p, '112', 119, 200, Wt, { shadow: K }); text(p, '58', 119, 214, Wt, { shadow: K });
+    text(p, '02:41', 274, 12, RGBA(255,224,64), { shadow: K });
+    return p;
+  }
+  const p = PB(640, 448), Wt = RGBA(255,255,255), K = RGBA(0,0,0);
+  text(p, 'RAVEN', 32, 26, Wt, { scale: 2, shadow: K });
+  for (let x = 32; x < 234; x++) { p.px(x, 48, Wt); p.px(x, 57, Wt); }
+  for (let y = 48; y < 58; y++) { p.px(32, y, Wt); p.px(233, y, Wt); }
+  for (let x = 33; x < 190; x++) { const t = (x - 33) / 200; for (let y = 49; y < 57; y++) p.px(x, y, RGBA(255, Math.round(80 + 120 * t), 40)); }
+  for (let x = 33; x < 233; x += 20) for (let y = 49; y < 57; y++) p.px(x, y, RGBA(0,0,0,110));
+  p.rect(488, 326, 120, 90, RGBA(0,0,0,140));
+  for (let x = 488; x < 608; x++) { p.px(x, 326, Wt); p.px(x, 415, Wt); }
+  for (let y = 326; y < 416; y++) { p.px(488, y, Wt); p.px(607, y, Wt); }
+  for (let y = 341; y < 415; y += 15) for (let x = 489; x < 607; x++) p.px(x, y, RGBA(200,200,200,120));
+  for (let x = 503; x < 607; x += 15) for (let y = 327; y < 415; y++) p.px(x, y, RGBA(200,200,200,120));
+  text(p, 'AREA 03  COURTYARD', 32, 410, RGBA(220,220,220), { shadow: K });
+  text(p, 'x12', 32, 70, RGBA(255,224,64), { scale: 2, shadow: K });
+  return p;
+}
+const HUDTEX = { ps1: makeTexture(320, 240, makeHUD('ps1').bytes()), ps2: makeTexture(640, 448, makeHUD('ps2').bytes()) };
+let fbo3d = null, fbo3dB = null;
+function ensure3D(w, h) {
+  if (fbo3d && fbo3d.w === w && fbo3d.h === h) return fbo3d;
+  freeTarget(fbo3d); freeTarget(fbo3dB);
+  fbo3dB = makeTarget(w, h, false);
+  gl.bindTexture(gl.TEXTURE_2D, fbo3dB.tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const t = makeTarget(w, h, false);
+  gl.bindTexture(gl.TEXTURE_2D, t.tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const rb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rb); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb); gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  t.rb = rb; fbo3d = t; return t;
+}
+function render3D(kind, t) {
+  const ps1 = kind === 'ps1', W = ps1 ? 320 : 640, H = ps1 ? 240 : 448;
+  const f = ensure3D(W, H);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f.fb); gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  const skyTop = ps1 ? [.20, .30, .62] : [.26, .40, .70], skyHor = ps1 ? [.86, .72, .58] : [.90, .82, .70];
+  gl.useProgram(P.sky); u2(P.sky, 'uRes', W, H); u3(P.sky, 'uTop', skyTop); u3(P.sky, 'uHor', skyHor); u1(P.sky, 'uPS1', ps1 ? 1 : 0);
+  gl.bindVertexArray(quadVAO); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.enable(gl.DEPTH_TEST);
+  const a = ps1 ? .6 + t * .16 : 2.4 + t * .11, rad = ps1 ? 6.4 : 5.8;
+  const eye = [Math.sin(a) * rad, (ps1 ? 2.1 : 1.75) + .2 * Math.sin(t * .5), Math.cos(a) * rad];
+  const view = M4.lookAt(eye, [0, ps1 ? 1.1 : 1.3, 0], [0, 1, 0]);
+  const proj = M4.persp(ps1 ? 1.05 : .95, 4 / 3, .1, 60);
+  const p = P.mesh; gl.useProgram(p);
+  um4(p, 'uProj', proj); um4(p, 'uView', view); um4(p, 'uModel', M4.id);
+  u2(p, 'uRes', W, H); u1(p, 'uPS1', ps1 ? 1 : 0); u2(p, 'uFog', ps1 ? 9 : 13, ps1 ? 36 : 50); u3(p, 'uFogCol', skyHor);
+  gl.bindSampler(0, ps1 ? SMP.near : SMP.tri);
+  for (const [k, g] of Object.entries(world.groups)) { tex(p, 'uTex', 0, TEX[k]); gl.bindVertexArray(g.vao); gl.drawArrays(gl.TRIANGLES, 0, g.count); }
+  um4(p, 'uModel', M4.rotY(t * 1.2, 0, 1.75 + Math.sin(t * 1.7) * .12, 0));
+  tex(p, 'uTex', 0, TEX.white); gl.bindVertexArray(world.gem.vao); gl.drawArrays(gl.TRIANGLES, 0, world.gem.count);
+  gl.bindSampler(0, null);
+  gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(P.hud); tex(P.hud, 'uHud', 0, HUDTEX[kind]); u2(P.hud, 'uRes', W, H);
+  gl.bindVertexArray(quadVAO); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.disable(gl.BLEND);
+  if (!ps1) { gl.useProgram(P.defl); tex(P.defl, 'uTex', 0, f.tex); ui2(P.defl, 'uSize', W, H); fullscreen(fbo3dB); return fbo3dB; }
+  return f;
+}
+scenes.ps1 = { w: 320, h: 240, sys: 'ps1', interlace: false, label: 'PS1 3D', tag: '240p', three: 'ps1' };
+scenes.ps2 = { w: 640, h: 448, sys: 'ps2', interlace: true, label: 'PS2 3D', tag: '480i', three: 'ps2' };
+scenes.upload = { w: 320, h: 240, sys: 'md40', interlace: false, label: 'Tvoja slika', tag: 'upload', static: true, pb: null, draw() { return this.pb; } };
+// ---------- DOS adventure (VGA mode 13h, 320x200, 18-bit palette) ----------
+scenes.dos = (() => {
+  const W = 320, H = 200, base = PB(W, H), fg = PB(W, H), pb = PB(W, H), rnd = rng(31);
+  const q6 = v => Math.round(Math.round(clamp(v, 0, 255) / 255 * 63) * 255 / 63);
+  const VG = (r, g, b) => RGBA(q6(r), q6(g), q6(b));
+  const stops = [[0, [36, 20, 84]], [.45, [150, 56, 120]], [.75, [244, 120, 72]], [1, [252, 206, 120]]];
+  const skyCol = y => { const t = y / 103; for (let i = 1; i < stops.length; i++) if (t <= stops[i][0]) { const a = stops[i - 1], b = stops[i]; return lerp3(a[1], b[1], (t - a[0]) / (b[0] - a[0])); } return stops[3][1]; };
+  for (let y = 0; y < 104; y++) { const c = VG(...skyCol(y)); for (let x = 0; x < W; x++) base.px(x, y, c); }
+  for (let i = 0; i < 40; i++) base.px((rnd() * W) | 0, (rnd() * 36) | 0, VG(220, 210, 255));
+  base.ellipse(212, 92, 15, 15, VG(255, 226, 160)); base.ellipse(212, 92, 11, 11, VG(255, 244, 210));
+  for (let x = 0; x < W; x++) {
+    const t1 = Math.round(70 + 10 * Math.sin(x * .03 + 1) + 6 * Math.sin(x * .071));
+    for (let y = t1; y < 104; y++) base.px(x, y, VG(...lerp3([128, 70, 134], [90, 46, 104], (y - t1) / 34)));
+    const t2 = Math.round(88 + 7 * Math.sin(x * .05 + 2.5) + 4 * Math.sin(x * .13));
+    for (let y = t2; y < 104; y++) base.px(x, y, VG(62, 34, 80));
+  }
+  for (let y = 150; y < 160; y++) for (let x = 0; x < W; x++) base.px(x, y, y === 150 ? VG(70, 104, 60) : VG(...lerp3([44, 72, 44], [24, 40, 28], (y - 151) / 9)));
+  // UI panel with bevelled verb buttons and inventory
+  base.rect(0, 160, W, 40, VG(140, 140, 152));
+  base.rect(0, 160, W, 1, VG(224, 224, 232)); base.rect(0, 199, W, 1, VG(60, 60, 72));
+  const bevel = (x, y, w, h, inset) => { base.rect(x, y, w, h, VG(156, 156, 168)); base.rect(x, y, w, 1, inset ? VG(80, 80, 92) : VG(228, 228, 236)); base.rect(x, y, 1, h, inset ? VG(80, 80, 92) : VG(228, 228, 236)); base.rect(x, y + h - 1, w, 1, inset ? VG(228, 228, 236) : VG(80, 80, 92)); base.rect(x + w - 1, y, 1, h, inset ? VG(228, 228, 236) : VG(80, 80, 92)); };
+  [['LOOK', 'TAKE', 'USE'], ['TALK', 'OPEN', 'GO']].forEach((row, r) => row.forEach((v, c) => { bevel(6 + c * 56, 165 + r * 16, 52, 14, false); text(base, v, 6 + c * 56 + Math.round((52 - v.length * 6) / 2), 169 + r * 16, VG(20, 20, 96)); }));
+  for (let i = 0; i < 4; i++) bevel(182 + i * 33, 166, 30, 30, true);
+  base.rect(190, 179, 12, 3, VG(232, 196, 40)); base.rect(200, 177, 3, 7, VG(232, 196, 40)); base.ellipse(190, 180, 4, 4, VG(232, 196, 40)); base.ellipse(190, 180, 1.5, 1.5, VG(156, 156, 168));
+  base.rect(226, 172, 4, 4, VG(200, 200, 220)); base.ellipse(228, 184, 6, 7, VG(210, 30, 50)); base.px(226, 181, VG(255, 160, 170));
+  base.rect(255, 173, 16, 18, VG(232, 214, 168)); base.rect(253, 173, 20, 3, VG(196, 170, 120)); base.rect(253, 188, 20, 3, VG(196, 170, 120)); for (let y = 178; y < 186; y += 2) base.rect(258, y, 10, 1, VG(120, 96, 70));
+  for (let y = 0; y < 14; y++) { const hw = y < 5 ? y : 13 - y; base.rect(296 - hw, 174 + y, hw * 2 + 1, 1, VG(60, 200, 220)); } base.px(294, 177, VG(230, 255, 255));
+  // foreground: pines and cabin (drawn over the lake each frame)
+  const pine = (cx, by, h) => { for (let y = 0; y < h; y++) { const tier = (y % 10) / 10; const hw = Math.round((1 + y * .22) * (.55 + .45 * tier)); fg.rect(cx - hw, by - h + y, hw * 2 + 1, 1, VG(20, 32, 30)); } fg.rect(cx - 1, by - 3, 3, 4, VG(40, 26, 22)); };
+  pine(10, 157, 58); pine(26, 156, 44); pine(268, 156, 50); pine(290, 158, 64); pine(310, 156, 46);
+  fg.rect(44, 128, 40, 28, VG(104, 64, 42)); for (let y = 130; y < 156; y += 4) fg.rect(44, y, 40, 1, VG(72, 44, 30));
+  for (let y = 0; y < 16; y++) { const hw = Math.round(y * 1.6); fg.rect(64 - hw, 113 + y, hw * 2, 1, VG(66, 36, 32)); }
+  fg.rect(70, 142, 7, 14, VG(40, 24, 18));
+  const hero = makeSprite(13, 27, VG, VG(16, 12, 20), s => {
+    s.rect(3, 2, 7, 2, VG(120, 76, 40)); s.rect(1, 4, 11, 1, VG(120, 76, 40)); s.ellipse(6.5, 8, 3, 3.2, VG(232, 176, 136));
+    s.rect(3, 11, 7, 8, VG(60, 124, 72)); s.rect(1, 12, 2, 6, VG(232, 176, 136)); s.rect(10, 12, 2, 6, VG(232, 176, 136));
+    s.rect(4, 19, 2, 5, VG(62, 52, 96)); s.rect(7, 19, 2, 5, VG(62, 52, 96)); s.rect(3, 24, 3, 1, VG(70, 40, 30)); s.rect(7, 24, 3, 1, VG(70, 40, 30));
+  }, s => { s.px(5, 8, VG(30, 20, 20)); s.px(8, 8, VG(30, 20, 20)); s.rect(3, 15, 7, 1, VG(90, 60, 30)); });
+  const cursor = fromStrings(['k.......', 'kk......', 'kwk.....', 'kwwk....', 'kwwwk...', 'kwwwwk..', 'kwwwwwk.', 'kwwwwwwk', 'kwwwkkkk', 'kwkwk...', 'kk.kwk..', '....kwk.', '.....k..'], { k: VG(0, 0, 0), w: VG(255, 255, 255) });
+  return {
+    w: W, h: H, sys: 'vga', interlace: false, label: 'DOS', tag: 'VGA 320×200', monitor: 'vga',
+    draw(t) {
+      pb.copy(base);
+      // lake: mirrored sky with a wavy displacement
+      for (let y = 104; y < 150; y++) {
+        const d = y - 104, sy = clamp(Math.round(103 - d * 2.2), 0, 103);
+        const dx = Math.round(Math.sin(y * .9 + t * 3) * (.5 + d * .06));
+        for (let x = 0; x < W; x++) { const c = base.get(clamp(x + dx, 0, W - 1), sy); pb.px(x, y, VG(cR(c) * .62, cG(c) * .66, cB(c) * .8 + 12)); }
+      }
+      pb.blit(fg, 0, 0);
+      const flick = .85 + .15 * Math.sin(t * 9) * Math.sin(t * 5.3);
+      pb.rect(55, 136, 9, 7, VG(255 * flick, 196 * flick, 96 * flick)); pb.rect(59, 136, 1, 7, VG(70, 40, 28)); pb.rect(55, 139, 9, 1, VG(70, 40, 28));
+      pb.blit(hero, 158, 127);
+      pb.blit(cursor, 186, 70);
+      return pb;
+    }
+  };
+})();
+
+// ---------- Amiga shoot-em-up (320x256 PAL, 12-bit palette, copper sky) ----------
+scenes.amiga = (() => {
+  const W = 320, H = 256, pb = PB(W, H);
+  const q4 = v => Math.round(clamp(v, 0, 255) / 255 * 15) * 17;
+  const AM = (r, g, b) => RGBA(q4(r), q4(g), q4(b));
+  const HOR = 168, FLOOR_END = 232;
+  const sky = [];
+  for (let y = 0; y < HOR; y++) { const t = y / HOR; sky[y] = AM(...(t < .55 ? lerp3([0, 8, 48], [96, 24, 120], t / .55) : lerp3([96, 24, 120], [255, 150, 60], (t - .55) / .45))); }
+  const horizonC = [255, 150, 60];
+  const planet = PB(60, 60);
+  for (let y = 0; y < 60; y++) for (let x = 0; x < 60; x++) {
+    const dx = x + .5 - 30, dy = y + .5 - 30; if (dx * dx + dy * dy > 27 * 27) continue;
+    const l = (-dx * .6 - dy * .55) / 27 + .25, b = [0, 2, 3, 1][(y & 1) * 2 + (x & 1)] / 4;
+    planet.px(x, y, l > .45 + b * .3 ? AM(150, 200, 230) : l > -.1 + b * .3 ? AM(80, 120, 180) : AM(40, 56, 110));
+  }
+  const mFar = [], mNear = [];
+  for (let x = 0; x < 640; x++) { const a = x / 640 * Math.PI * 2; mFar[x] = Math.round(126 + 12 * Math.sin(a * 3) + 7 * Math.sin(a * 7 + 1)); mNear[x] = Math.round(146 + 10 * Math.sin(a * 5 + 2) + 5 * Math.sin(a * 11)); }
+  const ship = makeSprite(30, 15, AM, AM(0, 0, 0), s => {
+    s.ellipse(16, 7.5, 12, 4, AM(200, 204, 224)); s.rect(5, 2, 7, 3, AM(220, 60, 60)); s.rect(5, 10, 7, 3, AM(220, 60, 60)); s.rect(2, 6, 4, 3, AM(120, 120, 150));
+  }, s => { s.ellipse(19, 6.5, 4, 1.8, AM(80, 200, 255)); s.px(18, 6, AM(255, 255, 255)); s.rect(1, 7, 2, 1, AM(255, 220, 80)); });
+  const orb = makeSprite(15, 15, AM, AM(0, 0, 0), s => s.ellipse(7.5, 7.5, 6, 6, AM(240, 110, 40)), s => { s.rect(5, 4, 2, 2, AM(255, 240, 200)); s.rect(7, 7, 2, 2, AM(120, 30, 10)); });
+  return {
+    w: W, h: H, sys: 'amiga', interlace: false, label: 'Amiga', tag: '320×256 PAL', monitor: 'amiga1084', std: 'pal',
+    draw(t) {
+      for (let y = 0; y < HOR; y++) pb.d.fill(sky[y], y * W, (y + 1) * W);
+      pb.blit(planet, 228, 22);
+      const o1 = Math.floor(t * 14), o2 = Math.floor(t * 30);
+      for (let x = 0; x < W; x++) {
+        const h1 = mFar[(((x + o1) % 640) + 640) % 640]; for (let y = h1; y < HOR; y++) pb.px(x, y, y === h1 ? AM(130, 96, 170) : AM(70, 46, 116));
+        const h2 = mNear[(((x + o2) % 640) + 640) % 640]; for (let y = h2; y < HOR; y++) pb.px(x, y, y === h2 ? AM(90, 60, 130) : AM(36, 22, 70));
+      }
+      // perspective checkerboard floor
+      for (let y = HOR; y < FLOOR_END; y++) {
+        const p = y - HOR + 1, z = 900 / p, fog = Math.pow(clamp(1 - p / 44, 0, 1), 1.6);
+        const zc = Math.floor((z + t * 70) / 14) & 1;
+        for (let x = 0; x < W; x++) {
+          const uc = Math.floor((x - 160) * z / 160 / 7 + 1000) & 1;
+          const c = (uc ^ zc) ? [50, 210, 90] : [20, 110, 56];
+          pb.px(x, y, AM(...lerp3(c, horizonC, fog)));
+        }
+      }
+      const sy = 96 + Math.round(Math.sin(t * 1.5) * 8);
+      for (let i = 0; i < 3; i++) { const bx = 72 + ((t * 260 + i * 90) % 250); pb.rect(bx, sy + 7, 7, 2, AM(255, 240, 120)); }
+      for (let i = 0; i < 3; i++) { const ex = W + 20 - ((t * 55 + i * 115) % (W + 40)); pb.blit(orb, ex, 70 + Math.round(Math.sin(t * 2 + i * 2.1) * 34)); }
+      pb.blit(ship, 36, sy);
+      // copper-gradient status panel
+      for (let y = FLOOR_END; y < H; y++) pb.d.fill(AM(...lerp3([48, 48, 96], [8, 8, 32], (y - FLOOR_END) / (H - FLOOR_END))), y * W, (y + 1) * W);
+      pb.rect(0, FLOOR_END, W, 1, AM(190, 190, 230));
+      text(pb, 'SCORE 0012500', 10, 241, AM(255, 255, 255), { shadow: AM(0, 0, 0) });
+      text(pb, 'LIVES 3', 134, 241, AM(255, 220, 80), { shadow: AM(0, 0, 0) });
+      text(pb, 'STAGE 2', 236, 241, AM(110, 230, 255), { shadow: AM(0, 0, 0) });
+      return pb;
+    }
+  };
+})();
+const SCENE_ORDER = ['waterfall', 'platformer', 'ps1', 'ps2', 'dos', 'amiga', 'test', 'upload'];
+
+// ===================================================================
+// Upload: detect integer upscaling and go back to native resolution
+// ===================================================================
+function blockUniform(data, w, h, f) {
+  const r = rng(f * 977); let good = 0, tested = 0;
+  const bw = Math.floor(w / f), bh = Math.floor(h / f);
+  for (let n = 0; n < 260; n++) {
+    const bx = (r() * bw) | 0, by = (r() * bh) | 0;
+    const cx = bx * f + (f >> 1), cy = by * f + (f >> 1), co = (cy * w + cx) * 4;
+    let ok = 0, tot = 0, varied = false;
+    for (let j = 0; j < f; j++) for (let i = 0; i < f; i++) {
+      const o = ((by * f + j) * w + bx * f + i) * 4;
+      const d = Math.abs(data[o] - data[co]) + Math.abs(data[o + 1] - data[co + 1]) + Math.abs(data[o + 2] - data[co + 2]);
+      if (d <= 30) ok++; tot++;
+    }
+    // neighbouring block must be allowed to differ: only count blocks next to an edge
+    const no = ((cy * w + Math.min(w - 1, cx + f)) * 4);
+    varied = Math.abs(data[no] - data[co]) + Math.abs(data[no + 1] - data[co + 1]) + Math.abs(data[no + 2] - data[co + 2]) > 30;
+    if (!varied) continue;
+    tested++; if (ok / tot >= .9) good++;
+  }
+  return tested >= 12 && good / tested >= .85;
+}
+function ingest(img) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
+  const data = x.getImageData(0, 0, w, h).data;
+  let f = 1;
+  for (let k = 8; k >= 2; k--) { if (w / k < 200 || h / k < 150) continue; if (blockUniform(data, w, h, k)) { f = k; break; } }
+  let nw, nh, pb, how;
+  if (f > 1) {
+    nw = Math.floor(w / f); nh = Math.floor(h / f); pb = PB(nw, nh);
+    for (let j = 0; j < nh; j++) for (let i = 0; i < nw; i++) { const o = ((j * f + (f >> 1)) * w + i * f + (f >> 1)) * 4; pb.d[j * nw + i] = RGBA(data[o], data[o + 1], data[o + 2]); }
+    how = `${w}×${h} → ${nw}×${nh} (${f}× povećanje uklonjeno)`;
+  } else if (w > 720 || h > 576) {
+    const asp = w / h; nw = 320; nh = Math.abs(asp - 4 / 3) < .2 ? 240 : clamp(Math.round(320 / asp), 160, 256);
+    let cw = w, ch = h, src = c;
+    while (cw / 2 >= nw * 1.5) { const t = document.createElement('canvas'); t.width = Math.round(cw / 2); t.height = Math.round(ch / 2); const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high'; tx.drawImage(src, 0, 0, t.width, t.height); src = t; cw = t.width; ch = t.height; }
+    const t = document.createElement('canvas'); t.width = nw; t.height = nh; const tx = t.getContext('2d', { willReadFrequently: true }); tx.imageSmoothingQuality = 'high'; tx.drawImage(src, 0, 0, nw, nh);
+    const d2 = tx.getImageData(0, 0, nw, nh).data; pb = PB(nw, nh);
+    for (let i = 0; i < nw * nh; i++) pb.d[i] = RGBA(d2[i * 4], d2[i * 4 + 1], d2[i * 4 + 2]);
+    how = `${w}×${h} → ${nw}×${nh} (nije cjelobrojno povećana, smanjeno glatko)`;
+  } else {
+    nw = w; nh = h; pb = PB(nw, nh);
+    for (let i = 0; i < nw * nh; i++) pb.d[i] = RGBA(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]);
+    how = `${w}×${h} (izvorna rezolucija)`;
+  }
+  const up = scenes.upload;
+  up.pb = pb; up.w = nw; up.h = nh;
+  // 320x200 and 640x350/400/480: PC VGA; 256 or 512 lines: Amiga PAL; 256 wide: Nintendo;
+  // 320x224: Mega Drive; 320x240 and other 240-line widths: PlayStation; 448+ lines: PS2 480i
+  let sys;
+  if ((nw === 320 && nh === 200) || (nw === 640 && (nh === 350 || nh === 400 || nh === 480))) sys = 'vga';
+  else if (nh === 256 || nh === 512 || (nw === 640 && nh === 200)) sys = 'amiga';
+  else if (nh >= 336 && nh <= 400 && nw >= 400) sys = 'arcade24';   // e.g. Sega Model 2, 496x384
+  else sys = nh > 300 ? 'ps2' : nw > 420 ? 'ps1' : nw <= 300 ? 'snes' : (nh >= 232 ? 'ps1' : 'md40');
+  up.sys = sys;
+  up.interlace = sys !== 'vga' && sys !== 'arcade24' && nh > 300;
+  up.monitor = sys === 'vga' ? 'vga' : sys === 'amiga' ? 'amiga1084' : undefined;
+  up.std = sys === 'amiga' ? (nh === 256 || nh === 512 ? 'pal' : 'ntsc') : undefined;
+  up.dirty = true;
+  const det = $('#detect'); det.hidden = false; det.textContent = 'Prepoznato: ' + how + (up.interlace ? ', prepleteno (480i)' : '');
+  selectScene('upload');
+}
+function loadFile(file) {
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { const det = $('#detect'); det.hidden = false; det.textContent = 'To nije slika. Učitaj PNG, JPG ili WebP.'; return; }
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onload = () => { URL.revokeObjectURL(url); ingest(img); };
+  img.onerror = () => { URL.revokeObjectURL(url); const det = $('#detect'); det.hidden = false; det.textContent = 'Sliku nije moguće otvoriti. Probaj PNG.'; };
+  img.src = url;
+}
+$('#file').addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
+const screenEl = $('#screen'), dropEl = $('#drop');
+['dragenter', 'dragover'].forEach(ev => screenEl.addEventListener(ev, e => { e.preventDefault(); dropEl.hidden = false; }));
+['dragleave', 'drop'].forEach(ev => screenEl.addEventListener(ev, e => { e.preventDefault(); dropEl.hidden = true; }));
+screenEl.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; loadFile(f); });
+document.addEventListener('paste', e => { const items = e.clipboardData ? [...e.clipboardData.items] : []; const it = items.find(i => i.type.startsWith('image/')); if (it) loadFile(it.getAsFile()); });
+
+// ===================================================================
+// Pipeline
+// ===================================================================
+let src = { tex: null, w: 0, h: 0, flip: 0 };
+const srcTex2D = makeTexture(1, 1, new Uint8Array([0, 0, 0, 255]));
+let pipe = {}, T = {};
+let accum = [null, null], accIdx = 0;
+let KY = new Float32Array(NTAP), KC = new Float32Array(NTAP);
+
+function currentScene() { return scenes[state.scene]; }
+function setupPipe() {
+  const sc = currentScene(), sys = SYSTEMS[state.system], std = state.pal ? 'pal' : 'ntsc';
+  const pclk = sys.pclk[std] * sc.w / sys.nominal;
+  const spp = Math.max(2, Math.round(27 / pclk)), fs = pclk * spp, cpl = sys.cpl[std];
+  pipe = { spp, fs, pclk, cps: FSC[std] / fs, cpl, lineFrac: frac(cpl), frameStep: frac(sys.lpf[std] * cpl), fsc: FSC[std], lpf: sys.lpf[std], interlace: !!sc.interlace };
+  const SW = sc.w * spp;
+  if (!T.sig || T.sig.w !== SW || T.sig.h !== sc.h) {
+    ['sig', 'dec', 'gA', 'gB'].forEach(k => freeTarget(T[k]));
+    T.sig = makeTarget(SW, sc.h, true);
+    T.dec = makeTarget(SW, sc.h, false);
+    const gw = Math.max(32, Math.round(sc.w / 2)), gh = Math.max(32, Math.round(sc.h / 2));
+    T.gA = makeTarget(gw, gh, true); T.gB = makeTarget(gw, gh, true);
+  }
+  kernDirty = true; pipeDirty = false;
+  clearAccum();
+  updateReadout();
+}
+function combActive() { return state.decoder === 'comb' && !state.pal && (state.cable === 'composite') && Math.abs(pipe.lineFrac - .5) < .05; }
+function rebuildKernels() {
+  const fsc = pipe.fsc, fs = pipe.fs, pal = state.pal;
+  let fcY = 3.3, notch = 0, fcC = 1;
+  // Consumer decoders: luma trap around the subcarrier, chroma roughly 0.5-1 MHz wide
+  if (state.cable === 'rf') { fcY = pal ? 3.6 : 2.8; notch = .95; fcC = .5; }
+  else if (state.cable === 'composite') { if (combActive()) { fcY = 4.2; notch = 0; } else { fcY = pal ? 4.2 : 3.3; notch = .92; } fcC = pal ? .8 : .6; }
+  else if (state.cable === 'svideo') { fcY = pal ? 5.0 : 4.6; fcC = pal ? 1.0 : .9; }
+  const sg = state.sharp * 1.4;
+  KY = designFIR(f => lp(f, fcY, 3) * (1 + sg * Math.exp(-(((f - 2.4) / 1.3) ** 2))), fs);
+  KC = designFIR(f => lp(f, fcC, 2), fs);
+  pipe.notch = notch; pipe.kyfsc = firResp(KY, fsc, fs);
+  kernDirty = false;
+  const note = $('#decNote');
+  if (note) {
+    let msg = '';
+    if (state.cable === 'composite' && state.decoder === 'comb') {
+      if (state.pal) msg = 'PAL televizori koriste liniju kašnjenja umjesto comb filtra, pa se ovdje ništa ne mijenja.';
+      else if (!combActive()) msg = 'Ova konzola ne obrće fazu boje iz linije u liniju (' + CPL_LABEL(pipe.cpl) + ' ciklusa), pa comb filtar ne radi i televizor pada na notch.';
+    } else if (state.decoder === 'comb' && state.cable !== 'composite') msg = 'Odvajanje boje vrijedi samo za composite. ' + (state.cable === 'rf' ? 'RF ulaz u starim televizorima išao je kroz notch.' : '');
+    note.textContent = msg; note.hidden = !msg;
+  }
+}
+function updateReadout() {
+  const sc = currentScene(); if (!pipe.fs) return;
+  const sys = SYSTEMS[state.system], cab = { rf: 'RF antenski ulaz', composite: 'composite', svideo: 'S-Video', rgb: 'RGB' }[state.cable];
+  if (sys.scan === 'vga') {
+    const dblR = sc.h <= 300;
+    $('#readout').textContent = [sys.name, `${sc.w}×${sc.h}`, dblR ? `svaka linija 2× (${sc.h * 2} linija)` : `${sc.h} linija`, `31,5 kHz · ${dblR ? 70 : 60} Hz`, cab].join(' · ');
+    return;
+  }
+  if (sys.scan === 'fill') {
+    $('#readout').textContent = [sys.name, `${sc.w}×${sc.h}`, `${sc.h} linija bez prepletanja`, '24 kHz · 57,5 Hz', cab].join(' · ');
+    return;
+  }
+  const parts = [sys.name, `${sc.w}×${sc.h}${sc.interlace ? 'i' : 'p'}`, `${state.pal ? 'PAL' : 'NTSC'} ${fmt(pipe.fsc, 2)} MHz`];
+  if (state.cable !== 'rgb') parts.push(`${CPL_LABEL(pipe.cpl)} ciklusa/liniji`, `${fmt(pipe.fsc / pipe.pclk, 2)} ciklusa/pikselu`);
+  parts.push(cab);
+  $('#readout').textContent = parts.join(' · ');
+}
+
+function resize() {
+  const r = screenEl.getBoundingClientRect();
+  let dpr = Math.min(window.devicePixelRatio || 1, 3);
+  let w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  const maxPx = 2.4e6; if (w * h > maxPx) { const s = Math.sqrt(maxPx / (w * h)); w = Math.round(w * s); h = Math.round(h * s); }
+  if (w < 2 || h < 2) return;
+  if (canvas.width !== w || canvas.height !== h || !accum[0]) {
+    canvas.width = w; canvas.height = h;
+    accum.forEach(freeTarget);
+    accum = [makeTarget(w, h, true), makeTarget(w, h, true)];
+    clearAccum(); dirty = true;
+  }
+}
+function clearAccum() { for (const a of accum) if (a) { gl.bindFramebuffer(gl.FRAMEBUFFER, a.fb); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); } gl.bindFramebuffer(gl.FRAMEBUFFER, null); }
+new ResizeObserver(resize).observe(screenEl);
+
+const view = { zoom: 1, panX: 0, panY: 0 };
+const TUBE = [.03, .04, .94, .92];
+let simT = 0, fieldCount = 0, lastTick = -1, dirty = true, lastUploaded = null;
+
+function updateSource() {
+  const sc = currentScene();
+  if (sc.three) { const f = render3D(sc.three, simT); src = { tex: f.tex, w: f.w, h: f.h, flip: 1 }; return; }
+  const pb = sc.draw ? sc.draw(simT) : null;
+  if (!pb) return;
+  if (!sc.static || lastUploaded !== pb || sc.dirty) {
+    gl.bindTexture(gl.TEXTURE_2D, srcTex2D);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, pb.w, pb.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, pb.bytes());
+    lastUploaded = pb; sc.dirty = false;
+  }
+  src = { tex: srcTex2D, w: pb.w, h: pb.h, flip: 0 };
+}
+
+function setPhase(p) {
+  // "Bez titranja": hold the subcarrier phase still from field to field, so dot crawl stands still
+  const fc = state.steady ? 0 : fieldCount;
+  u1(p, 'uCPS', pipe.cps); u1(p, 'uLineFrac', pipe.lineFrac);
+  u1(p, 'uFramePhase', frac(fc * pipe.frameStep)); u1(p, 'uFieldPhase', pipe.frameStep);
+  u1(p, 'uPAL', state.pal ? 1 : 0); u1(p, 'uVSwitch', (fc * Math.floor(pipe.lpf)) % 2);
+  u1(p, 'uStepSig', pipe.interlace ? 2 : 1);
+}
+function setSrc(p, unit) { tex(p, 'uSrc', unit, src.tex); ui2(p, 'uSrcSize', src.w, src.h); u1(p, 'uFlip', src.flip); u1(p, 'uSPP', pipe.spp); }
+
+function renderFrame() {
+  if (pipeDirty) setupPipe();
+  if (kernDirty) rebuildKernels();
+  updateSource();
+  const sc = currentScene(), mode = CABLE_MODE[state.cable], seed = fieldCount % 997;
+  // 1. encode
+  if (mode < 3) {
+    const p = P.enc; gl.useProgram(p); setSrc(p, 0); setPhase(p);
+    u1(p, 'uChromaSigma', clamp(.1325 * pipe.fs / 1.5, .5, 3)); u1(p, 'uMode', mode);
+    u1(p, 'uNoise', state.noise); u1(p, 'uGhost', mode === 0 ? .12 : 0); u1(p, 'uGhostDelay', Math.round(.8 * pipe.fs)); u1(p, 'uSeed', seed);
+    u1(p, 'uSigFloat', T.sig.isF ? 1 : 0);
+    fullscreen(T.sig);
+  }
+  // 2. decode
+  {
+    const p = P.dec; gl.useProgram(p); setSrc(p, 0); setPhase(p);
+    tex(p, 'uSig', 1, T.sig.tex); ui2(p, 'uSigSize', T.sig.w, T.sig.h);
+    u1v(p, 'uKY[0]', KY); u1v(p, 'uKC[0]', KC);
+    u1(p, 'uMode', mode); u1(p, 'uComb', combActive() ? 1 : 0); u1(p, 'uSigFloat', T.sig.isF ? 1 : 0); u1(p, 'uRGBSigma', .1325 * pipe.fs / 6.5);
+    u1(p, 'uNotch', pipe.notch || 0); u1(p, 'uKYfsc', pipe.kyfsc || 0);
+    u1(p, 'uTint', state.pal ? 0 : state.tint * Math.PI / 180); u1(p, 'uSat', state.sat); u1(p, 'uBright', state.bright); u1(p, 'uContrast', state.contrast);
+    fullscreen(T.dec);
+  }
+  // 3. glow
+  { const p = P.gh; gl.useProgram(p); tex(p, 'uDec', 0, T.dec.tex); u2(p, 'uGSize', T.gA.w, T.gA.h); u1(p, 'uGamma', state.gamma); fullscreen(T.gA); }
+  { const p = P.gv; gl.useProgram(p); tex(p, 'uTex', 0, T.gA.tex); u2(p, 'uGSize', T.gB.w, T.gB.h); fullscreen(T.gB); }
+  // 4. CRT
+  // VGA and medium-res arcade fill the screen with their own line count; TV modes sit in a 240/288-line raster
+  const scan = SYSTEMS[state.system].scan, vga = scan === 'vga', fill = vga || scan === 'fill';
+  const dbl = (vga && sc.h <= 300) ? 2 : 1;
+  const visLines = fill ? sc.h * dbl : (state.pal ? 288 : 240) * (sc.interlace ? 2 : 1);
+  const prev = accum[accIdx], next = accum[1 - accIdx];
+  const geo = p => {
+    u2(p, 'uRes', canvas.width, canvas.height); u1(p, 'uZoom', view.zoom); u2(p, 'uPan', view.panX, view.panY);
+    u4(p, 'uTube', TUBE[0], TUBE[1], TUBE[2], TUBE[3]); u2(p, 'uCurv', state.curvX, state.curvY); u1(p, 'uCorner', .045);
+    u1(p, 'uSrcW', sc.w); u1(p, 'uSrcH', sc.h); u1(p, 'uVisLines', visLines); u1(p, 'uOverscan', state.overscan); u1(p, 'uDbl', dbl);
+  };
+  {
+    const p = P.crt; gl.useProgram(p); geo(p);
+    tex(p, 'uDec', 0, T.dec.tex); tex(p, 'uGlow', 1, T.gB.tex); tex(p, 'uPrev', 2, prev.tex);
+    // interlaced sources: alternate fields, or with "Bez titranja" draw both fields every frame (same beam size)
+    const il = sc.interlace && !state.steady, sgk = (sc.interlace && state.steady) ? 2 : 1;
+    u1(p, 'uStep', il ? 2 : 1); u1(p, 'uOffset', il ? (fieldCount & 1) : 0);
+    // horizontal spot in physical units: the same beam covers more source pixels on a 640-wide mode
+    u2(p, 'uSigma', state.sigLo * sgk, Math.max(state.sigLo, state.sigHi) * sgk); u1(p, 'uHSigma', state.hfocus * sc.w / 320); u1(p, 'uGamma', state.gamma);
+    u1(p, 'uConv', state.conv);
+    u1(p, 'uGlowAmt', state.glow); u1(p, 'uVignette', state.vignette); u1(p, 'uPersist', state.persist); u1(p, 'uAmbient', state.ambient);
+    u1(p, 'uAccumF', next.isF ? 1 : 0); u1(p, 'uJitter', mode === 0 ? .5 + state.noise * 4 : 0); u1(p, 'uSeed', seed);
+    u1(p, 'uMaskType', MASK_TYPE[state.maskType]); u1(p, 'uMaskStr', state.maskStr); u1(p, 'uMaskPitch', state.maskPitch); u1(p, 'uMaskAvg', MASK_AVG[state.maskType]);
+    u3(p, 'uWhite', whitePoint(state.white));
+    fullscreen(next);
+  }
+  // 5. present
+  {
+    const p = P.pres; gl.useProgram(p); geo(p);
+    tex(p, 'uAccum', 0, next.tex); setSrc(p, 1); tex(p, 'uGlow', 2, T.gB.tex);
+    u1(p, 'uAccumF', next.isF ? 1 : 0); u1(p, 'uCompare', state.compare ? 1 : 0); u1(p, 'uSplit', state.split);
+    u3(p, 'uBezel', [.022, .025, .024]);
+    fullscreen(null);
+  }
+  accIdx = 1 - accIdx;
+}
+
+// Colour temperature of the TV's white, relative to D65, in linear light (blackbody approximation)
+function kelvinRGB(T) {
+  const t = T / 100;
+  const r = t <= 66 ? 255 : 329.698727446 * Math.pow(t - 60, -0.1332047592);
+  const g = t <= 66 ? 99.4708025861 * Math.log(t) - 161.1195681661 : 288.1221695283 * Math.pow(t - 60, -0.0755148492);
+  const b = t >= 66 ? 255 : (t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307);
+  return [r, g, b].map(v => clamp(v, 0, 255) / 255);
+}
+const D65 = kelvinRGB(6500);
+let wpCache = { k: -1, v: [1, 1, 1] };
+function whitePoint(K) {
+  if (wpCache.k === K) return wpCache.v;
+  // keep white at the same brightness and only shift its tint; blue may go above 1, the shoulder absorbs it
+  const c = kelvinRGB(K).map((v, i) => Math.pow(v / D65[i], 2.2));
+  const Y = .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+  wpCache = { k: K, v: c.map(v => v / Y) };
+  return wpCache.v;
+}
+
+function fieldRate() {
+  if (SYSTEMS[state.system].scan === 'vga') return currentScene().h <= 300 ? 70.09 : 59.94;
+  if (SYSTEMS[state.system].scan === 'fill') return 57.5;
+  return state.pal ? 50 : 59.94;
+}
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!accum[0]) return;
+  const rate = fieldRate();
+  const tick = Math.floor(now / 1000 * rate);
+  if (tick !== lastTick) {
+    // a change of refresh rate (NTSC/PAL, VGA 70 Hz) makes the tick count jump; never run the clock backwards
+    let steps = tick - lastTick;
+    if (lastTick < 0 || steps < 1) steps = 1; else if (steps > 4) steps = 4;
+    lastTick = tick; fieldCount++;
+    if (!state.paused) simT += steps / rate;
+  } else if (!dirty) return;
+  dirty = false;
+  try { renderFrame(); } catch (err) { console.error(err); }
+}
+
+// ===================================================================
+// UI wiring
+// ===================================================================
+function selectScene(id) {
+  state.scene = id;
+  const sc = scenes[id];
+  state.system = sc.sys;
+  // a scene can bring its own norm (Amiga PAL) and its natural display (VGA monitor, 1084S)
+  state.pal = sc.std ? sc.std === 'pal' : state.palUser;
+  if (sc.monitor) applyPreset(sc.monitor);
+  else if (state.preset === 'vga' || state.preset === 'amiga1084') applyPreset('consumer');
+  pipeDirty = true; dirty = true; lastUploaded = null;
+  view.zoom = 1; view.panX = view.panY = 0; $('#zoom').value = 1; $('#zoomOut').textContent = '1×';
+  updateTouch();
+  document.querySelectorAll('#scenes .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  syncUI();
+}
+function buildScenes() {
+  const nav = $('#scenes');
+  for (const id of SCENE_ORDER) {
+    const sc = scenes[id];
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.dataset.id = id;
+    b.innerHTML = `${sc.label}<span class="tag">${sc.tag}</span>`;
+    b.addEventListener('click', () => { if (id === 'upload' && !scenes.upload.pb) { $('#file').click(); return; } selectScene(id); });
+    nav.appendChild(b);
+  }
+}
+function updateTouch() { canvas.style.touchAction = (state.compare || view.zoom > 1.001) ? 'none' : 'auto'; canvas.style.cursor = state.compare ? 'ew-resize' : (view.zoom > 1.001 ? 'grab' : 'default'); }
+function clampPan() { const m = .5 - .5 / view.zoom; view.panX = clamp(view.panX, -m, m); view.panY = clamp(view.panY, -m, m); }
+$('#zoom').addEventListener('input', e => { view.zoom = parseFloat(e.target.value); clampPan(); $('#zoomOut').textContent = fmt(view.zoom, 1).replace(',0', '') + '×'; updateTouch(); clearAccum(); dirty = true; });
+$('#cmp').addEventListener('click', () => { state.compare = !state.compare; $('#cmp').setAttribute('aria-pressed', String(state.compare)); $('#lblL').hidden = $('#lblR').hidden = !state.compare; updateTouch(); dirty = true; });
+$('#pause').addEventListener('click', () => { state.paused = !state.paused; $('#pause').setAttribute('aria-pressed', String(state.paused)); $('#pause').textContent = state.paused ? 'Nastavi igru' : 'Pauziraj igru'; });
+const steadyEl = $('#steady');
+try { state.steady = localStorage.getItem('lola-retro-steady') === '1'; } catch (e) {}
+steadyEl.checked = state.steady;
+steadyEl.addEventListener('change', () => { state.steady = steadyEl.checked; try { localStorage.setItem('lola-retro-steady', state.steady ? '1' : '0'); } catch (e) {} clearAccum(); dirty = true; });
+// Maximise: the TV fills the page; real browser fullscreen is attempted too, where the frame allows it
+const setEl = $('#set'), exitMax = $('#exitMax');
+let maxed = false;
+function setMax(on) {
+  maxed = on;
+  setEl.classList.toggle('max', on); document.body.classList.toggle('maxed', on); exitMax.hidden = !on;
+  if (on) { if (document.fullscreenEnabled && setEl.requestFullscreen) setEl.requestFullscreen().catch(() => {}); }
+  else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  clearAccum(); dirty = true;
+}
+$('#fsBtn').addEventListener('click', () => setMax(true));
+exitMax.addEventListener('click', () => setMax(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && maxed) setMax(false); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && maxed) setMax(false); });
+let drag = null;
+canvas.addEventListener('pointerdown', e => {
+  if (!(state.compare || view.zoom > 1.001)) return;
+  canvas.setPointerCapture(e.pointerId);
+  drag = { x: e.clientX, y: e.clientY, px: view.panX, py: view.panY, mode: state.compare ? 'split' : 'pan' };
+  if (drag.mode === 'split') setSplit(e);
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (drag.mode === 'split') { setSplit(e); return; }
+  const r = canvas.getBoundingClientRect();
+  view.panX = drag.px - (e.clientX - drag.x) / r.width / view.zoom;
+  view.panY = drag.py - (e.clientY - drag.y) / r.height / view.zoom;
+  clampPan(); dirty = true;
+});
+['pointerup', 'pointercancel'].forEach(ev => canvas.addEventListener(ev, () => { drag = null; }));
+function setSplit(e) { const r = canvas.getBoundingClientRect(); state.split = clamp((e.clientX - r.left) / r.width, .02, .98); dirty = true; }
+canvas.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect(), q = [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  const qz = [(q[0] - .5) / view.zoom + .5 + view.panX, (q[1] - .5) / view.zoom + .5 + view.panY];
+  view.zoom = clamp(view.zoom * Math.exp(-e.deltaY * .01), 1, 8);
+  view.panX = qz[0] - (q[0] - .5) / view.zoom - .5; view.panY = qz[1] - (q[1] - .5) / view.zoom - .5;
+  clampPan(); $('#zoom').value = view.zoom; $('#zoomOut').textContent = fmt(view.zoom, 1).replace(',0', '') + '×'; updateTouch(); clearAccum(); dirty = true;
+}, { passive: false });
+
+if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { state.paused = true; $('#pause').setAttribute('aria-pressed', 'true'); $('#pause').textContent = 'Nastavi igru'; }
+
+buildScenes();
+buildPanel();
+selectScene('waterfall');
+resize();
+window.__crt = { state, view, selectScene, applyPreset, syncUI, scenes, simTime: () => simT, markDirty: () => { dirty = true; pipeDirty = true; kernDirty = true; } };
+requestAnimationFrame(loop);
+})();
+</script>
