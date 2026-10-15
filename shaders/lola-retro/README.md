@@ -81,7 +81,7 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu â
 | TV standard | 0 auto (by line count), 1 NTSC, 2 PAL. |
 | Cable | 0 RF, 1 Composite, 2 S-Video, 3 RGB. |
 | Comb filter | Better TVs separated colour with a comb filter. Only works when the console flips the subcarrier phase every line (PlayStation, Amiga). |
-| Luma trap in the console | How much of the fine luma detail the console's encoder filtered out before mixing in colour. Lower it for a stronger rainbow on fine stripes (Sonic's waterfall), raise it for a cleaner picture. |
+| Luma trap in the console | How much of the fine luma detail the console's encoder filtered out before mixing in colour. Lower it for a stronger rainbow on fine stripes (Sonic's waterfall), raise it for a cleaner picture. Real consoles differed a lot here: 0 is like an early Mega Drive Model 1 (strong rainbow), 0.75 (default) a typical console, 1 a later model with a better encoder. |
 | Sharpness, Colour, Tint, Brightness, Contrast | The TV's own knobs. Tint only exists on NTSC sets. |
 | RF noise | Snow on the antenna input. |
 | No flicker | On by default. Freezes dot crawl and draws both interlaced fields every frame. Turn it off for the real moving dot crawl and 480i field flicker. |

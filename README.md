@@ -44,6 +44,10 @@ Full-resolution RetroArch screenshots. The bottom row is a 1:1 crop of each.
 pixel clock puts those stripes right next to the colour subcarrier, so composite turns them into blended colour
 and a rainbow shimmer. RGB keeps the stripes.
 
+How strong that rainbow was depended on the console and the TV. Early Model 1 Mega Drives had a cheap encoder
+with weak filters and showed it strongly; later models and TVs with a comb filter showed much less. The default is
+a typical console. Set **Luma trap in the console** to 0 for an early Model 1, or to 1 for a later model.
+
 ![Sonic: raw, composite, RGB](docs/sonic-raw-composite-rgb.jpg)
 
 **Super Mario Bros. (NES).** Composite softens colour and lets it bleed past the edges, and the dithered side
