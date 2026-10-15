@@ -87,6 +87,11 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_VIGNETTE;
     float LR_OVERSCAN;
     float LR_AMBIENT;
+#ifdef LR_HDR
+    float LR_HDR_OUT;
+    float LR_NITS_WHITE;
+    float LR_NITS_PEAK;
+#endif
 } global;
 
 const float TAU = 6.28318530718;

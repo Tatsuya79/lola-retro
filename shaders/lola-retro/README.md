@@ -17,14 +17,17 @@ the console is detected from the frame size and the mask adapts to your screen r
 console pixel, so the signal stays right and the extra detail only makes edges smoother.
 A few cases need one setting, see [RECOMMENDED-CORES.md](RECOMMENDED-CORES.md).
 
+On an HDR display, use the same presets from `lola-retro/hdr/curved` instead, see [HDR](#hdr).
+
 ## Curved or flat
 
-Both folders have the same 8 presets.
+Every folder has the same 8 presets.
 
 | Folder | Screen |
 |---|---|
 | `curved/` | The glass bulges like a real tube, with rounded corners. |
 | `flat/` | Same presets, flat screen and square corners. Pick this if curvature bothers you. |
+| `hdr/curved/`, `hdr/flat/` | The same presets for HDR displays, see [HDR](#hdr). |
 
 ## Presets
 
@@ -95,6 +98,8 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | White point | 6500 K neutral, 9300 K is the bluish white many TVs and monitors had. |
 | Curvature, Rounded corners, Glass glow, Glass glow size, Darker edges, Overscan, Room reflection | The glass. Glass glow sets how strong the halo around bright things is, Glass glow size how far it reaches. Set curvature and corners to 0 for a flat screen (that is all the `flat` presets change). Negative overscan adds a black border, like PC monitors. |
 
+| HDR: paper white, HDR: display peak | Only in the `hdr` presets. Paper white is how bright a full white screen is, display peak the most your display can show. See [HDR](#hdr). |
+
 ### Console timing ids
 
 | Id | Console | Why it matters |
@@ -114,6 +119,32 @@ modes → PlayStation, 320×200 or 640×400 → VGA, 256 or 512 lines → Amiga,
 more than 300 lines → interlaced, more than 576 lines → upscaled (see Internal resolution). Set the id by hand when the guess is wrong (for example a Mega Drive game
 in 240-line PAL mode).
 
+## HDR
+
+A real tube concentrated its light in the phosphor dots and the centre of each scanline, with dark gaps
+around them. On an SDR display the shader has to squeeze those bright dots under the white level, so the
+picture loses brightness and contrast. On an HDR display the presets in `hdr/curved` and `hdr/flat` give the
+dots the extra brightness instead, and the average stays at the paper white level.
+
+1. Video driver **Vulkan, D3D11 or D3D12** (**Settings → Drivers → Video**, then restart RetroArch).
+   On a Mac use Vulkan; the Metal driver has HDR only in nightly builds so far.
+2. Turn HDR on for the display in the system: on Windows **Settings → System → Display → Use HDR**,
+   on macOS **System Settings → Displays → High Dynamic Range**.
+3. In RetroArch: **Settings → Video → HDR → Enable HDR**.
+4. Load a preset from `lola-retro/hdr/curved` or `lola-retro/hdr/flat`.
+5. In **Quick Menu → Shaders → Shader Parameters**, at the bottom:
+   - **HDR: display peak (nits)**: the peak brightness of your display. About 400 for DisplayHDR 400
+     monitors, 600–1000 for OLED TVs.
+   - **HDR: paper white (nits)**: how bright a white screen should be. 200 is a good start; raise it for a
+     brighter picture.
+
+The shader writes HDR10 itself, so RetroArch's own HDR settings (paper white, peak, contrast) do not change
+these presets. Use them only with HDR switched on, otherwise the picture looks grey and flat. The normal
+presets keep working with HDR on as well (RetroArch converts them), they just don't use the extra brightness.
+
+With a bright display (peak about 4× paper white or more) you can raise **Mask strength** towards 1.0:
+the gaps between the phosphors go dark like on a real tube and the picture stays as bright.
+
 ## Performance
 
 The chain has seven passes and the encoder and decoder do real signal filtering, so it needs a reasonably
@@ -126,6 +157,8 @@ textures that wide (every desktop GPU of the last decade does).
 Rendered in RetroArch 1.18 with the glcore and Vulkan drivers, and reported working with Vulkan and glcore on
 Windows (NVIDIA). Direct3D 10/11/12 failed in 1.0 and 1.1; 1.2 fixes the cause (every pass now samples
 without derivatives, which the Direct3D compiler requires inside loops). Metal has not been confirmed yet.
+The HDR output has been checked numerically (the HDR10 signal decodes back to the intended brightness);
+reports from HDR displays are welcome.
 Reports are welcome.
 
 ## License

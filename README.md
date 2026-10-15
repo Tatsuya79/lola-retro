@@ -28,6 +28,7 @@ little rainbow, just as it did on a living-room TV. On RGB you see the stripes t
 1. Copy `shaders/lola-retro` into RetroArch's shader folder (**Settings → Directory → Video Shaders** shows where it is).
 2. Start a game, open **Quick Menu → Shaders → Load** and pick `lola-retro/curved/consumer-tv-composite.slangp`.
 3. Video driver must be Vulkan, glcore, D3D11, D3D12 or Metal (the old `gl` driver does not run slang shaders).
+4. HDR display? Use the same presets from `lola-retro/hdr/curved`; setup is in [HDR](shaders/lola-retro/README.md#hdr).
 
 Default core settings are fine for most systems. The few that matter are in
 [RECOMMENDED-CORES.md](shaders/lola-retro/RECOMMENDED-CORES.md).
@@ -80,6 +81,8 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
 - **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow.
 - **Internal resolution.** PS1 and PS2 cores running at 2× and up are read as blocks of one console pixel,
   so the signal stays right and the extra detail only makes edges smoother.
+- **HDR output.** On an HDR display the phosphor dots and scanline centres get the brightness a real tube
+  had, instead of being squeezed under the SDR white level. The `hdr` presets write HDR10 themselves.
 
 ## Tested against test patterns
 
@@ -113,7 +116,7 @@ Measured on synthetic patterns:
 
 | Folder | Contents |
 |---|---|
-| `shaders/lola-retro/` | The RetroArch shader pack (slang): 8 presets, each in a `curved/` and a `flat/` version. Details in its [README](shaders/lola-retro/README.md). |
+| `shaders/lola-retro/` | The RetroArch shader pack (slang): 8 presets, each in a `curved/` and a `flat/` version, plus the same for HDR displays in `hdr/`. Details in its [README](shaders/lola-retro/README.md). |
 | `web/lola-retro.html` | The original WebGL version. Open it in a browser, try test scenes or drop in your own screenshots. |
 | `tools/` | Preset generator, compile checker and a headless preview renderer. |
 | `test-images/` | Native-resolution test frames used for the previews. |
