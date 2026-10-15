@@ -20,6 +20,7 @@ layout(push_constant) uniform Push
 #pragma parameter LR_CABLE "Cable (0 RF, 1 Composite, 2 S-Video, 3 RGB)" 1.0 0.0 3.0 1.0
 #pragma parameter LR_COMB "Comb filter (NTSC composite only)" 0.0 0.0 1.0 1.0
 #pragma parameter LR_YTRAP "Luma trap in the console (less rainbow)" 0.0 0.0 1.0 0.05
+#pragma parameter LR_DBLEND "Dither blend on RGB and S-Video (modern, off on real TVs)" 0.0 0.0 1.0 0.05
 #pragma parameter LR_SHARP "Sharpness" 0.35 0.0 1.0 0.01
 #pragma parameter LR_SAT "Colour" 1.25 0.0 2.0 0.01
 #pragma parameter LR_TINT "Tint (NTSC, degrees)" 0.0 -30.0 30.0 1.0
@@ -59,6 +60,7 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_CABLE;
     float LR_COMB;
     float LR_YTRAP;
+    float LR_DBLEND;
     float LR_SHARP;
     float LR_SAT;
     float LR_TINT;
@@ -95,6 +97,16 @@ layout(std140, set = 0, binding = 0) uniform UBO
 } global;
 
 const float TAU = 6.28318530718;
+
+// Dither blend (RGB and S-Video, off by default): composite blended 1-pixel dither
+// patterns into new colours or transparency; on RGB they stay visible as stripes.
+// The blend finds the part of the picture that alternates from one console pixel to
+// the next (a Gaussian window of 1.25 pixels with alternating signs, a narrow notch at
+// half the pixel clock) and takes it out. Flat areas, gradients and wider detail are
+// left alone. Weights for offsets 0..4 and the normalisation 4 * (w1 + w3):
+const float DBW[5] = float[5](1.0, 0.726149, 0.278037, 0.056135, 0.005976);
+const float DBN = 3.129136;
+float dbSign(int k) { return (abs(k) & 1) == 1 ? -1.0 : 1.0; }
 
 // RF: the echo (multipath ghost) added by the antenna path
 const float RF_ECHO = 0.12;      // strength

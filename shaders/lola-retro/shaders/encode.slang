@@ -38,12 +38,28 @@ vec3 srcPix(float xs, float y, float k)
 // trap > 0: the encoder's luma trap takes that share of the luma near the colour
 // subcarrier (about +-0.5 MHz) out before mixing, so fine stripes leak less into
 // the colour (less rainbow). The band is narrow, so plain brightness is not touched.
-vec2 enc(float n, float y, float fs, Timing T, float trap)
+vec2 enc(float n, float y, float fs, Timing T, float trap, float blend)
 {
     float ppx = T.pclk / fs;                 // source pixels per sample
     float xs = (n + 0.5) * ppx;
     vec3 c = srcPix(xs, y, T.scale);
     float Y = dot(c, vec3(0.299, 0.587, 0.114));
+
+    if (blend > 0.0)
+    {
+        // dither blend (S-Video): take the 1-pixel alternating part out of luma.
+        // Works on console pixels, so an upscaled frame blends the same way.
+        float sp = T.scale;
+        float j0 = floor(xs / sp);
+        float y0 = dot(srcPix((j0 + 0.5) * sp, y, T.scale), vec3(0.299, 0.587, 0.114));
+        float a = 0.0;
+        for (int k = -4; k <= 4; k++)
+        {
+            float yk = dot(srcPix((j0 + float(k) + 0.5) * sp, y, T.scale), vec3(0.299, 0.587, 0.114));
+            a += DBW[abs(k)] * dbSign(k) * (yk - y0);
+        }
+        Y -= blend * a / DBN;
+    }
     float ph = phaseAt(n / fs, y, T);
 
     // the encoder limits chroma to about 1.5 MHz before modulation
@@ -104,13 +120,14 @@ void main()
     }
 
     float trap = cable < 1.5 ? global.LR_YTRAP : 0.0;   // S-Video keeps luma apart, no trap needed
-    vec2 a = enc(n, y, fs, T, trap);
+    float blend = cable > 1.5 ? global.LR_DBLEND : 0.0; // composite and RF blend dither by themselves
+    vec2 a = enc(n, y, fs, T, trap, blend);
     vec2 r;
     if (cable < 0.5)
     {
         // RF: composite plus an echo and snow
         float comp = a.x + a.y;
-        vec2 g = enc(n - RF_ECHO_US * fs, y, fs, T, trap);
+        vec2 g = enc(n - RF_ECHO_US * fs, y, fs, T, trap, 0.0);
         comp += RF_ECHO * (g.x + g.y);
         float seed = float(params.FrameCount % 997u);
         comp += (hash13(vec3(n, y, seed)) - 0.5) * global.LR_NOISE;

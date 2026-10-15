@@ -56,6 +56,15 @@ of the pipe melts into a smooth shade. RGB stays sharp, only rounded by the beam
 
 ![Mario: raw, composite, RGB](docs/mario-raw-composite-rgb.jpg)
 
+## Optional: dither blend on RGB
+
+Prefer the clean RGB picture but want the dithering blended? Turn on **Dither blend on RGB and S-Video** in the
+shader parameters. It takes out only the stripes that alternate from one pixel to the next, so Sonic's background
+and Mario's pipe blend without composite's rainbow and blur. It is off by default because no real TV did this;
+it is modern processing, like the notch filter of the RetroTINK 4K Pro.
+
+![Dither blend off and on, with composite for comparison](docs/dither-blend-sonic.jpg)
+
 ## Presets
 
 | | |

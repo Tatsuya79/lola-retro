@@ -70,12 +70,35 @@ void main()
         // RGB: no NTSC/PAL at all, only the video amplifier bandwidth (~6.5 MHz)
         float xs = (n + 0.5) * T.pclk / fs;
         float sigPx = 0.1325 / 6.5 * T.pclk;
+
+        // dither blend: the 1-pixel alternating part around the five console pixels
+        // the amplifier taps can reach, taken out of every tap below
+        float db = global.LR_DBLEND;
+        float sp = T.scale;
+        float j0 = floor(xs / sp);
+        vec3 alt[5];
+        for (int i = 0; i < 5; i++) alt[i] = vec3(0.0);
+        if (db > 0.0)
+        {
+            vec3 p[13];
+            for (int i = 0; i < 13; i++) p[i] = origPix((j0 + float(i - 6) + 0.5) * sp, y, T.scale);
+            for (int i = 0; i < 5; i++)
+            {
+                vec3 a = vec3(0.0);
+                for (int k = -4; k <= 4; k++) a += DBW[abs(k)] * dbSign(k) * (p[i + 4 + k] - p[i + 4]);
+                alt[i] = db * a / DBN;
+            }
+        }
+
         vec3 acc = vec3(0.0);
         float ws = 0.0;
         for (int k = -3; k <= 3; k++)
         {
             float w = exp(-0.5 * float(k * k));
-            acc += w * origPix(xs + float(k) * sigPx, y, T.scale);
+            float xt = xs + float(k) * sigPx;
+            vec3 v = origPix(xt, y, T.scale);
+            if (db > 0.0) v -= alt[clamp(int(floor(xt / sp) - j0) + 2, 0, 4)];
+            acc += w * v;
             ws += w;
         }
         vec3 c = acc / ws;
