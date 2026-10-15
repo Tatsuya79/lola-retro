@@ -138,5 +138,12 @@ void main()
     acc.b += dacc.b * sh;
 
     // the square root is stored because the CRT pass needs both it and its square
+#ifdef LR_PACKED_SPOT
+    // no alpha channel (86Box's passes are RGB only): the spot rides on red, in whole steps of 4
+    // above the light (0..3.99); the CRT pass takes it off again (beamAt)
+    vec3 r = min(sqrt(max(acc, 0.0)), 3.99);
+    FragColor = vec4(r.r + 4.0 * floor(spot * 255.0 + 0.5), r.g, r.b, 1.0);
+#else
     FragColor = vec4(sqrt(max(acc, 0.0)), spot);
+#endif
 }

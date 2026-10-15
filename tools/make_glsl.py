@@ -1,23 +1,37 @@
 #!/usr/bin/env python3
-"""Convert the Lola Retro slang passes to GLSL for Amiberry.
+"""Convert the Lola Retro slang passes to GLSL for emulators with RetroArch-style .glslp presets.
 
-Amiberry loads RetroArch-style .glslp presets and runs them on OpenGL 3.3 core (macOS, Linux
-and Windows desktops). This tool turns the slang passes into .glsl files it can load:
+Two targets, each one preset:
+- Amiberry (Amiga 1084S): amiberry/lola-retro
+- 86Box (PC monitor, VGA): 86box/lola-retro
 
-- the includes are inlined, and each pass becomes one file with a VERTEX and a FRAGMENT part;
-- the Vulkan uniform blocks become the plain uniforms Amiberry sets (TextureSize, OutputSize,
-  OrigTextureSize, FrameCount, MVPMatrix);
-- the preset's values are built in: the ones worth adjusting stay parameters, the rest become
-  constants, so the compiler drops the code they switch off (composite, RF, the TV beam model);
-- every parameter is declared once, in the first pass, which writes the values into a spare
-  channel of its output (blue, first row) for the later passes. Amiberry lists the parameters
-  of every pass, so this keeps each one in its list once.
+Both run the passes on OpenGL core profiles (Amiberry 3.3, 86Box 3.2 or newer). The conversion:
+- inlines the includes and turns each pass into one file with a VERTEX and a FRAGMENT part;
+- replaces the Vulkan uniform blocks with the plain uniforms the emulator sets;
+- builds in the preset's values: the ones worth adjusting stay parameters, the rest become
+  constants, so the compiler drops the code they switch off (composite, RF, the TV beam model).
 
-Amiberry differs from RetroArch in a few ways the shaders are built for (see crt.inc):
-LR_FIELDS (it draws every Amiga line twice), LR_NO_FEEDBACK (no feedback textures) and
-LR_FIT_43 (its picture area is not always 4:3).
+The two emulators differ from RetroArch, and from each other:
 
-Only the Amiga 1084S preset is built for now.
+Amiberry - every pass's output is sized exactly, and passes are found by their alias.
+  It lists the parameters of every pass in its menu, so each parameter is declared once, in the
+  first pass, which writes the values into a spare channel of its output (blue, first row);
+  the later passes read them from there. It draws every Amiga line twice (LR_FIELDS).
+  Rows run bottom-up, as everywhere in OpenGL; that only mirrors the mask pattern and the small
+  vertical misconvergence, which does not show.
+
+86Box - the older RetroArch GLSL rules: every texture is rounded up to a power of two with the
+  picture in its lower left corner, TexCoord only spans the picture, passes are found by number
+  (Pass2Texture), OutputSize is the window for every pass, and the passes have no alpha channel
+  (LR_PACKED_SPOT). The conversion rescales every texture read to the picture inside its texture,
+  with the same filter and edge behaviour as in RetroArch, and works out each pass's own output
+  size. The first pass gets no Orig* values from 86Box; its Source is the frame anyway.
+  The frame is read upside down and the last pass turns the picture back, so every pass works
+  with the top line first, exactly as in RetroArch. 86Box keeps only "#version" and its number
+  of the version line and skips a parameter whose description is longer than 63 characters.
+
+Neither has feedback textures (LR_NO_FEEDBACK, no afterglow), and neither keeps the picture
+area 4:3 (LR_FIT_43). The options are described in crt.inc.
 
 Usage: python3 tools/make_glsl.py
 """
@@ -28,9 +42,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SLANG = ROOT / "shaders" / "lola-retro" / "shaders"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from make_presets import BASE, PRESETS, fmt  # noqa: E402
+from make_presets import BASE, PASSES, PRESETS, fmt  # noqa: E402
 
-# The parameters left adjustable in Amiberry, in the order its list shows them.
+# The parameters left adjustable, in the order the emulator's list shows them.
 # Everything else is fixed at the preset's value.
 AMIGA_PARAMS = [
     "LR_NORM", "LR_DBLEND", "LR_SAT", "LR_BRIGHT", "LR_CONTRAST", "LR_STEADY",
@@ -39,41 +53,65 @@ AMIGA_PARAMS = [
     "LR_CURV_X", "LR_CURV_Y", "LR_CORNER", "LR_GLOW", "LR_GLOW_SIZE", "LR_VIGNETTE", "LR_OVERSCAN", "LR_AMBIENT",
     "LR_MON_SIZE", "LR_MON_PITCH", "LR_MON_SPOT_LO", "LR_MON_SPOT_HI", "LR_MON_CORNER",
 ]
-
-# Amiberry's pass chain. Amiberry gives a pass's output texture that pass's own wrap mode,
-# RetroArch samples it with the next pass's, so wrap modes are the RetroArch preset's moved
-# one pass up. Filters work the same in both (the next pass sets it when reading its Source),
-# so the pass after the beam must be linear for the CRT pass to read LR_Beam smoothly.
-AMIBERRY_PASSES = [
-    dict(src="encode", alias="LR_Signal", filter=False, wrap="clamp_to_border",
-         sx=("source", 4.0), sy=("source", 1.0), float=True),
-    dict(src="decode", alias="LR_Decoded", filter=True, wrap="clamp_to_edge",
-         sx=("source", 1.0), sy=("source", 1.0), float=True),
-    dict(src="glow-h", filter=True, wrap="clamp_to_edge",
-         sx=("source", 0.125), sy=("source", 0.5), float=True),
-    dict(src="glow-v", alias="LR_Glow", filter=True, wrap="clamp_to_edge",
-         sx=("source", 1.0), sy=("source", 1.0), float=True),
-    dict(src="beam", alias="LR_Beam", filter=True, wrap="clamp_to_edge",
-         sx=("absolute", 8192), sy=("source", 2.05), float=True),
-    dict(src="fields", filter=True, wrap="clamp_to_edge",
-         sx=("absolute", 1), sy=("source", 0.5), float=True),
-    dict(src="fields", alias="LR_Fields", filter=False, wrap="clamp_to_edge",
-         sx=("absolute", 1), sy=("absolute", 1), float=True),
-    dict(src="crt", filter=True, wrap="clamp_to_edge",
-         sx=("viewport", 1.0), sy=("viewport", 1.0), float=True),
-    dict(src="present", filter=False, wrap="clamp_to_edge",
-         sx=("viewport", 1.0), sy=("viewport", 1.0), float=False),
+PC_PARAMS = [
+    "LR_DBLEND", "LR_SAT", "LR_BRIGHT", "LR_CONTRAST",
+    "LR_GAMMA", "LR_CONV",
+    "LR_MASK_TYPE", "LR_MASK_STR", "LR_WHITE", "LR_PHOS",
+    "LR_CURV_X", "LR_CURV_Y", "LR_CORNER", "LR_GLOW", "LR_GLOW_SIZE", "LR_VIGNETTE", "LR_OVERSCAN", "LR_AMBIENT",
+    "LR_MON_SIZE", "LR_MON_PITCH", "LR_MON_SPOT_LO", "LR_MON_SPOT_HI", "LR_MON_CORNER",
 ]
+
+
+def retroarch_chain():
+    """The RetroArch pass chain from make_presets.PASSES. filter and wrap have RetroArch's meaning:
+    how the pass samples its Source (a pass's output is read by later passes with the filter and
+    wrap of the pass after it)."""
+    kv = dict(re.findall(r"^(\w+) = (.+)$", PASSES, flags=re.M))
+    chain = []
+    for i in range(int(kv["shaders"])):
+        p = dict(src=Path(kv[f"shader{i}"]).stem, alias=kv.get(f"alias{i}", ""),
+                 filter=kv.get(f"filter_linear{i}") == "true", wrap=kv.get(f"wrap_mode{i}", "clamp_to_border"),
+                 float=kv.get(f"float_framebuffer{i}") == "true")
+        for ax in "xy":
+            st = kv.get(f"scale_type_{ax}{i}", kv.get(f"scale_type{i}"))
+            sc = kv.get(f"scale_{ax}{i}", kv.get(f"scale{i}"))
+            p["s" + ax] = (st, float(sc)) if st else None
+        chain.append(p)
+    return chain
+
+
+CHAIN = retroarch_chain()
+NAMES = [p["src"] for p in CHAIN]
+assert NAMES == ["encode", "decode", "glow-h", "glow-v", "beam", "crt", "present"], NAMES
+CRT = dict(CHAIN[5], alias="")                    # no feedback, so no alias needed
+FIELDS = [dict(src="fields", alias="", filter=True, wrap="clamp_to_edge",     # linear: it is LR_Beam's reader
+               sx=("absolute", 1.0), sy=("source", 0.5), float=True),
+          dict(src="fields", alias="LR_Fields", filter=False, wrap="clamp_to_edge",
+               sx=("absolute", 1.0), sy=("absolute", 1.0), float=True)]
 
 TARGETS = {
     "amiberry": dict(
+        api="amiberry",
         preset="amiga-1084s",
         out=ROOT / "amiberry" / "lola-retro",
         title="Commodore 1084S",
+        emulator="Amiberry",
         defines=["LR_FIELDS", "LR_NO_FEEDBACK", "LR_FIT_43"],
         params=AMIGA_PARAMS,
         fixed=dict(LR_CONSOLE=6),     # Amiberry only shows Amiga modes
-        passes=AMIBERRY_PASSES,
+        passes=CHAIN[:5] + FIELDS + [CRT, CHAIN[6]],
+    ),
+    "86box": dict(
+        api="86box",
+        preset="pc-monitor-vga",
+        out=ROOT / "86box" / "lola-retro",
+        title="PC monitor (VGA)",
+        emulator="86Box",
+        defines=["LR_NO_FEEDBACK", "LR_FIT_43", "LR_PACKED_SPOT"],
+        params=PC_PARAMS,
+        fixed={},
+        # the last pass has no scale, so 86Box lets it draw straight into the window
+        passes=CHAIN[:5] + [CRT, dict(CHAIN[6], sx=None, sy=None)],
     ),
 }
 
@@ -93,6 +131,28 @@ def expand(path, seen=None):
             out += expand(inc, seen | {inc})
         else:
             out.append(line)
+    return out
+
+
+def resolve_ifdefs(lines, defines):
+    """Keep only the #ifdef / #ifndef / #else branches that apply to these defines."""
+    out, stack = [], []          # stack of (this branch active, any branch taken)
+    for line in lines:
+        m = re.match(r"\s*#(ifdef|ifndef|else|endif)\b\s*(\w*)", line)
+        if not m:
+            if all(a for a, _ in stack):
+                out.append(line)
+            continue
+        kind, name = m.groups()
+        if kind in ("ifdef", "ifndef"):
+            on = (name in defines) == (kind == "ifdef")
+            stack.append((on, on))
+        elif kind == "else":
+            _, taken = stack.pop()
+            stack.append((not taken, True))
+        else:
+            stack.pop()
+    assert not stack, "unbalanced #ifdef"
     return out
 
 
@@ -141,11 +201,114 @@ def used_parameters(common, stages, names):
     return [n for n in names if n in used]
 
 
-def convert(src_name, target, values, table, owner):
-    """GLSL source of one pass. The owner (the first pass) declares the adjustable parameters."""
-    relay_from = target["passes"][0]["alias"]
+def size_expr(scale, axis):
+    """86Box: this pass's output size along one axis, as GLSL (86Box only passes the window)."""
+    if scale is None:
+        return f"floor(InputSize.{axis})"
+    kind, k = scale
+    if kind == "viewport":
+        return f"floor(OutputSize.{axis} * {k!r})"
+    if kind == "absolute":
+        return f"{k!r}"
+    return f"floor(InputSize.{axis} * {k!r})"
+
+
+def box_samplers(stage, passes, index):
+    """86Box: rename the samplers of one stage to the names 86Box binds, and read every texture
+    through a helper that finds the picture inside its power-of-two texture and repeats
+    RetroArch's filter and edge behaviour. Returns the new stage code.
+
+    86Box's own filter setting (View > Filter method), not the preset, decides how the frame
+    (the first pass's Source, Original) and the last pass's Source are filtered. Lola Retro reads
+    those without filtering, so the helpers for them fetch whole texels and the setting does not
+    matter. The other textures get the preset's filter, which is the one RetroArch would use.
+
+    OpenGL counts rows from the bottom, RetroArch's shaders from the top. The frame is read upside
+    down, so every pass's output has the top line in row 0 as in RetroArch, and the last pass
+    turns the picture the right way up (see convert). Every pass then works exactly as there."""
+    declared = re.findall(r"^\s*uniform\s+sampler2D\s+(\w+)\s*;.*$", stage, flags=re.M)
+    helpers, decls, seen = [], [], set()
+    for name in declared:
+        frame = name == "Original" or (name == "Source" and index == 0)
+        if name == "Source" or (name == "Original" and index == 0):
+            # the first pass's Source is the frame itself; 86Box gives that pass no Orig* values
+            tex, size, tsize = "Texture", "LR_SourceSize.xy", "TextureSize"
+            linear, wrap = passes[index]["filter"], passes[index]["wrap"]
+            ours = index not in (0, len(passes) - 1)
+        elif name == "Original":
+            tex, size, tsize = "OrigTexture", "OrigInputSize", "OrigTextureSize"
+            linear, wrap, ours = passes[0]["filter"], passes[0]["wrap"], False
+        else:
+            j = next(k for k, p in enumerate(passes) if p["alias"] == name)
+            assert j < index, f"{name} is read before it is drawn"
+            linear, wrap = passes[j + 1]["filter"], passes[j + 1]["wrap"]
+            ours = not (j == index - 1 and index == len(passes) - 1)
+            if j == index - 1:
+                tex, size, tsize = "Texture", "LR_SourceSize.xy", "TextureSize"
+            else:
+                # 86Box's PassNInputSize is the input of pass N - 1, so pass j's picture is Pass(j+2)InputSize
+                tex, size, tsize = f"Pass{j + 1}Texture", f"floor(Pass{j + 2}InputSize)", f"Pass{j + 2}TextureSize"
+                if tex not in seen:
+                    decls.append(f"uniform vec2 Pass{j + 2}InputSize, Pass{j + 2}TextureSize;")
+        assert ours or not linear, f"pass {index} reads {name} filtered, but 86Box decides that filter"
+        if tex not in seen:
+            decls.append(f"uniform sampler2D {tex};")
+            seen.add(tex)
+        stage = re.sub(r"^\s*uniform\s+sampler2D\s+" + name + r"\s*;.*$\n?", "", stage, flags=re.M)
+        stage = re.sub(r"\btextureLod\(\s*" + name + r"\s*,", f"lr_tex_{name}(", stage)
+        stage = re.sub(r"\btexelFetch\(\s*" + name + r"\s*,", f"lr_fetch_{name}(" if frame else f"texelFetch({tex},", stage)
+        # the picture's size, not the texture's
+        stage = re.sub(r"\btextureSize\(\s*" + name + r"\s*,\s*0\s*\)", f"ivec2({size})", stage)
+        assert not re.search(r"\b(texture|textureSize)\(\s*" + name + r"\b", stage), f"{name}: unhandled read"
+        if linear:
+            body = ["    uv.y = 1.0 - uv.y;                          // the frame: top line first"] if frame else []
+            if wrap == "clamp_to_edge":
+                body.append("    uv = clamp(uv, 0.5 / n, 1.0 - 0.5 / n);")
+            # (clamp_to_border: outside the picture the texture is cleared to black)
+            body.append(f"    return textureLod({tex}, uv * n / {tsize}, lod);")
+        else:
+            if wrap == "clamp_to_edge":
+                body = ["    ivec2 t = ivec2(clamp(floor(uv * n), vec2(0.0), n - 1.0));"]
+            else:
+                body = ["    if (any(lessThan(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) return vec4(0.0);",
+                        "    ivec2 t = ivec2(floor(uv * n));"]
+            if frame:
+                body.append("    t.y = int(n.y) - 1 - t.y;                   // the frame: top line first")
+            body.append(f"    return texelFetch({tex}, t, 0);")
+        helpers += [f"vec4 lr_tex_{name}(vec2 uv, float lod)   // {'linear' if linear else 'nearest'}, {wrap}",
+                    "{",
+                    f"    vec2 n = {size};",
+                    *body,
+                    "}",
+                    ""]
+        if frame:
+            helpers += [f"vec4 lr_fetch_{name}(ivec2 p, int lod)",
+                        "{",
+                        f"    p.y = int({size}.y) - 1 - p.y;              // the frame: top line first",
+                        f"    return texelFetch({tex}, p, lod);",
+                        "}",
+                        ""]
+    if not declared:
+        return stage
+    code = re.sub(r"//.*", "", stage)
+    left = [n for n in declared if re.search(r"(?<!lr_tex_)(?<!lr_fetch_)\b" + n + r"\b", code)]
+    assert not left, f"pass {index}: {left} still used directly"
+    block = "\n".join(["// Textures as 86Box binds them. The picture sits in the lower left corner of a power-of-two",
+                       "// texture (n texels of it), so every read goes through a helper."]
+                      + decls + [""] + helpers)
+    # after the stage's last input/output declaration, before its first function
+    first_fn = re.search(r"^\s*" + TYPES + r"\s+\w+\s*\([^;]*$", stage, flags=re.M)
+    cut = first_fn.start() if first_fn else 0
+    return stage[:cut] + "\n" + block + stage[cut:]
+
+
+def convert(index, target, values, table):
+    """GLSL source of pass number index."""
+    passes, api = target["passes"], target["api"]
+    src_name = passes[index]["src"]
+    owner = index == 0
     path = SLANG / f"{src_name}.slang"
-    lines = [l for l in expand(path)
+    lines = [l for l in resolve_ifdefs(expand(path), set(target["defines"]))
              if not l.strip().startswith("#version")
              and not re.match(r"\s*#pragma\s+(parameter|name|format)\b", l)]
     text = "\n".join(lines)
@@ -171,46 +334,82 @@ def convert(src_name, target, values, table, owner):
     vs, n_vs = re.subn(r"\bvoid\s+main\s*\(\s*\)", "void lr_main()", vs)
     fs, n_fs = re.subn(r"\bvoid\s+main\s*\(\s*\)", "void lr_main()", fs)
     assert n_vs == 1 and n_fs == 1, src_name
+    if api == "86box":
+        # TexCoord only spans the picture inside the power-of-two texture: make it 0..1 again
+        # (the last pass turns the picture the right way up: its rows count from the top, as in
+        # RetroArch, while the window's count from the bottom; see box_samplers)
+        last = index == len(passes) - 1
+        vs, n = re.subn(r"=\s*TexCoord\s*;", "= TexCoord * TextureSize / InputSize" + (
+            " * vec2(1.0, -1.0) + vec2(0.0, 1.0);   // top row first" if last else ";"), vs)
+        assert n == 1, src_name
+        vs = box_samplers(vs, passes, index)
+        fs = box_samplers(fs, passes, index)
 
     adjustable = target["params"]
     named = set(re.findall(r"\b(LR_[A-Z_]+)\b", text))
     fixed = sorted(n for n in named if n in table and n not in adjustable)
-    # every adjustable value the code names is declared; the ones it can reach are loaded
     declared = [n for n in adjustable if n in named]
-    relay = [] if owner else used_parameters(common, [vs, fs], adjustable)
+    relay = used_parameters(common, [vs, fs], adjustable) if api == "amiberry" and not owner else []
 
-    out = ["#version 330 core",
-           f"// Lola Retro - {src_name} pass for Amiberry ({target['title']}).",
+    # Amiberry runs OpenGL 3.3 core. 86Box asks for OpenGL 3.2 (GLSL 1.50) and keeps only "#version"
+    # plus one word of this line, so no profile word (150 means core anyway)
+    out = ["#version 330 core" if api == "amiberry" else "#version 150",
+           f"// Lola Retro - {src_name} pass for {target['emulator']} ({target['title']}).",
            f"// Generated by tools/make_glsl.py from shaders/lola-retro/shaders/{src_name}.slang. Do not edit.",
            ""]
     out += [f"#define {d}" for d in target["defines"]]
     out.append("")
     if owner:
-        out.append("// Adjustable values. They are set here only; this pass hands them to the others.")
+        out.append("// Adjustable values" + (". They are set here only; this pass hands them to the others."
+                                             if api == "amiberry" else " (every pass reads them by name)."))
         for n in adjustable:
             desc, _, lo, hi, step = table[n]
+            assert api != "86box" or 0 < len(desc) <= 63, f"86Box would skip {n}: description over 63 characters"
             out.append(f'#pragma parameter {n} "{desc}" {fmt(values[n])} {fmt(lo)} {fmt(hi)} {fmt(step)}')
         out.append("")
-    out += ["uniform vec2 TextureSize;       // Source: the previous pass (the frame for the first pass)",
-            "uniform vec2 OrigTextureSize;   // Original: the emulator's frame",
-            "uniform vec2 OutputSize;        // this pass",
-            "uniform int FrameCount;",
-            "#define LR_SourceSize vec4(TextureSize, 1.0 / TextureSize)",
-            "#define LR_OriginalSize vec4(OrigTextureSize, 1.0 / OrigTextureSize)",
-            "#define LR_OutputSize vec4(OutputSize, 1.0 / OutputSize)",
-            "#define LR_FrameCount uint(FrameCount)",
-            ""]
+    if api == "amiberry":
+        out += ["uniform vec2 TextureSize;       // Source: the previous pass (the frame for the first pass)",
+                "uniform vec2 OrigTextureSize;   // Original: the emulator's frame",
+                "uniform vec2 OutputSize;        // this pass",
+                "uniform int FrameCount;",
+                "#define LR_SourceSize vec4(TextureSize, 1.0 / TextureSize)",
+                "#define LR_OriginalSize vec4(OrigTextureSize, 1.0 / OrigTextureSize)",
+                "#define LR_OutputSize vec4(OutputSize, 1.0 / OutputSize)",
+                "#define LR_FrameCount uint(FrameCount)",
+                ""]
+    else:
+        p = passes[index]
+        ox, oy = size_expr(p["sx"], "x"), size_expr(p["sy"], "y")
+        out += ["uniform vec2 InputSize;         // the previous pass's picture (the frame for the first pass)",
+                "uniform vec2 TextureSize;       // its texture, rounded up to a power of two"]
+        if owner:
+            out += ["uniform vec2 OutputSize;        // the picture area in the window (86Box sends it to every pass)",
+                    "uniform int FrameCount;",
+                    "#define LR_SourceSize vec4(floor(InputSize), 1.0 / floor(InputSize))",
+                    "#define LR_OriginalSize LR_SourceSize   // the frame (86Box gives the first pass no Orig* values)"]
+        else:
+            out += ["uniform vec2 OrigInputSize;     // the emulator's frame",
+                    "uniform vec2 OrigTextureSize;",
+                    "uniform vec2 OutputSize;        // the picture area in the window (86Box sends it to every pass)",
+                    "uniform int FrameCount;",
+                    "#define LR_SourceSize vec4(floor(InputSize), 1.0 / floor(InputSize))",
+                    "#define LR_OriginalSize vec4(OrigInputSize, 1.0 / OrigInputSize)"]
+        out += [f"#define LR_OutputSize vec4({ox}, {oy}, 1.0 / ({ox}), 1.0 / ({oy}))   // this pass",
+                "#define LR_FrameCount uint(FrameCount)",
+                ""]
     if fixed:
         out.append("// fixed by the preset")
         out += [f"const float {n} = {float(values[n])!r};" for n in fixed]
         out.append("")
-    if owner:
-        out += [f"uniform float {n};" for n in adjustable]
-        out.append("")
+    if owner or api == "86box":
+        names = adjustable if owner else declared
+        out += [f"uniform float {n};" for n in names]
+        if names:
+            out.append("")
     elif declared:
         out.append("// adjustable values, read from the first pass's output in main()")
         if relay:
-            out.append(f"uniform sampler2D {relay_from};")
+            out.append(f"uniform sampler2D {passes[0]['alias']};")
         out += [f"float {n};" for n in declared]
         out.append("")
     out.append(common.strip("\n"))
@@ -225,7 +424,7 @@ def convert(src_name, target, values, table, owner):
         out.append("{")
         out.append("    // the adjustable values: blue channel of the first pass's first row")
         for n in relay:
-            out.append(f"    {n} = texelFetch({relay_from}, ivec2({adjustable.index(n)}, 0), 0).b;")
+            out.append(f"    {n} = texelFetch({passes[0]['alias']}, ivec2({adjustable.index(n)}, 0), 0).b;")
         for i in range(nv):
             group = relay[4 * i: 4 * i + 4] + ["0.0"] * (4 - len(relay[4 * i: 4 * i + 4]))
             out.append(f"    lrParams[{i}] = vec4({', '.join(group)});")
@@ -236,7 +435,7 @@ def convert(src_name, target, values, table, owner):
     out += ["", "#elif defined(FRAGMENT)"]
     out.append(fs.strip("\n"))
     out.append("")
-    if owner:
+    if owner and api == "amiberry":
         k = len(adjustable)
         out += ["// The adjustable values go to the later passes: texel k of the first row, blue channel.",
                 "float lr_param(int k)",
@@ -263,26 +462,30 @@ def convert(src_name, target, values, table, owner):
     else:
         out += ["void main()", "{", "    lr_main();", "}"]
     out += ["#endif", ""]
-    glsl = "\n".join(out)
-    return re.sub(r"\n{3,}", "\n\n", glsl)
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out))
 
 
 def preset_text(target):
-    lines = [f"# Lola Retro - {target['title']} for Amiberry",
+    """The .glslp. Both emulators give a pass's output texture that pass's own wrap mode, where
+    RetroArch reads it with the next pass's, so the wrap modes move one pass up. Filters mean the
+    same in all three (how a pass reads its Source)."""
+    passes = target["passes"]
+    lines = [f"# Lola Retro - {target['title']} for {target['emulator']}",
              "# Generated by tools/make_glsl.py from the RetroArch slang shaders. Do not edit.",
              "",
-             f"shaders = {len(target['passes'])}",
+             f"shaders = {len(passes)}",
              ""]
-    for i, p in enumerate(target["passes"]):
+    for i, p in enumerate(passes):
         lines.append(f"shader{i} = shaders/{p['src']}.glsl")
-        if p.get("alias"):
+        if p["alias"]:
             lines.append(f"alias{i} = {p['alias']}")
         lines.append(f"filter_linear{i} = {'true' if p['filter'] else 'false'}")
-        lines.append(f"wrap_mode{i} = {p['wrap']}")
+        lines.append(f"wrap_mode{i} = {passes[i + 1]['wrap'] if i + 1 < len(passes) else p['wrap']}")
         for ax in "xy":
-            st, sc = p["s" + ax]
-            lines.append(f"scale_type_{ax}{i} = {st}")
-            lines.append(f"scale_{ax}{i} = {sc}")
+            if p["s" + ax]:
+                st, sc = p["s" + ax]
+                lines.append(f"scale_type_{ax}{i} = {st}")
+                lines.append(f"scale_{ax}{i} = {sc!r}" if st != "absolute" else f"scale_{ax}{i} = {int(sc)}")
         if p["float"]:
             lines.append(f"float_framebuffer{i} = true")
         lines.append("")
@@ -291,7 +494,7 @@ def preset_text(target):
 
 def main():
     table = parameter_table()
-    for name, target in TARGETS.items():
+    for target in TARGETS.values():
         values = {n: d[1] for n, d in table.items()}
         values.update(BASE)
         values.update(PRESETS[target["preset"]])
@@ -300,10 +503,12 @@ def main():
         (out / "shaders").mkdir(parents=True, exist_ok=True)
         written = set()
         for i, p in enumerate(target["passes"]):
-            if p["src"] in written:
-                continue
-            glsl = convert(p["src"], target, values, table, owner=(i == 0))
             dest = out / "shaders" / f"{p['src']}.glsl"
+            glsl = convert(i, target, values, table)
+            if p["src"] in written:
+                # one file used by two passes (fields): both must convert the same
+                assert glsl == dest.read_text(), f"{p['src']} differs between its passes"
+                continue
             dest.write_text(glsl)
             written.add(p["src"])
             print("wrote", dest.relative_to(ROOT))

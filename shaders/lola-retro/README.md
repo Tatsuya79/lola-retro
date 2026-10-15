@@ -154,6 +154,8 @@ with 1-pixel dots still visible, and 1024×768 is soft, as it was on a 15-inch t
 a 17-inch). The dot mask is too fine to show at 1080p, as it was on the real monitor at normal viewing
 distance; at 4K it shows as a fine texture.
 
+For the stand-alone PC emulator 86Box, the repository has this preset converted to GLSL (`86box/`).
+
 ## Amiga 1084S
 
 The `amiga-1084s` preset is built from the Commodore 1084S-P1 service manual and photos of a real 1084S:

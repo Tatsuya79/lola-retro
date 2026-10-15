@@ -20,7 +20,6 @@ const float LR_CONSOLE = 6.0;
 const float LR_DEMOD = 0.0;
 const float LR_MASK_TRIADS = 470.0;
 const float LR_MON_MM = 1.0;
-const float LR_PERSIST = 0.05;
 const float LR_SIG_HI = 0.42;
 const float LR_SIG_LO = 0.2;
 
@@ -60,6 +59,7 @@ float LR_MON_CORNER;
 //                   (the fields passes find out), not an interlaced frame
 //   LR_NO_FEEDBACK  no afterglow (the emulator has no feedback textures)
 //   LR_FIT_43       the tube stays 4:3 whatever shape the picture area has
+//   LR_PACKED_SPOT  the beam pass has no alpha channel, the spot is packed onto red
 
 // Lola Retro - shared parameters, uniforms and helpers for every pass.
 //
@@ -342,9 +342,7 @@ flat out vec3 vWhite;
 flat out vec4 vTiming;   // scan mode, PAL, interlaced, internal resolution
 flat out float vPhos;    // phosphor set
 flat out float vShare;   // share of the active line the source covers
-#ifdef LR_FIELDS
 flat out float vAmiga;
-#endif
 
 // Blackbody colour of the TV's white, relative to D65
 vec3 kelvinRGB(float T)
@@ -367,9 +365,7 @@ void lr_main()
     vTiming = vec4(T.scan, T.pal, T.interlace, T.scale);
     vPhos = phosphorSet(T);
     vShare = activeShare(T, LR_OriginalSize.xy);
-#ifdef LR_FIELDS
     vAmiga = isAmiga(T) ? 1.0 : 0.0;
-#endif
     // the white is set on the phosphor drives so that it ends up at the chosen colour temperature
     if (vPhos > 1.5) vWhite = inverse(phosphorMatrix(vPhos)) * vWhite;
 }
@@ -412,18 +408,11 @@ flat in vec3 vWhite;
 flat in vec4 vTiming;
 flat in float vPhos;
 flat in float vShare;
-#ifdef LR_FIELDS
 flat in float vAmiga;
-#endif
 out vec4 FragColor;
 uniform sampler2D LR_Beam;
 uniform sampler2D LR_Glow;
-#ifndef LR_NO_FEEDBACK
-uniform sampler2D LR_CRTFeedback;
-#endif
-#ifdef LR_FIELDS
 uniform sampler2D LR_Fields;
-#endif
 
 // Beam of source line i at position x along the line (from the beam pass):
 // rgb = square root of its linear brightness, a = which spot made it (PC monitor);
@@ -500,14 +489,12 @@ void lr_main()
     vec2 tc = vTexCoord;
     vec2 tubePx = LR_OutputSize.xy;                   // size of the tube face in screen pixels
     float px = 2.0 * LR_OutputSize.z;
-#ifdef LR_FIT_43
     // the picture area may be any shape: the 4:3 tube sits in its middle
     float va = LR_OutputSize.x * LR_OutputSize.w;
     vec2 fit = va > 4.0 / 3.0 ? vec2(4.0 / 3.0 / va, 1.0) : vec2(1.0, 0.75 * va);
     tc = (tc - 0.5) / fit + 0.5;
     tubePx *= fit;
     px /= fit.x;
-#endif
     vec2 c = tc * 2.0 - 1.0;
     c *= 1.0 + vec2(LR_CURV_X, LR_CURV_Y) * (c.yx * c.yx);
     float corner = LR_CORNER;
@@ -522,7 +509,6 @@ void lr_main()
         vec2 ua = (ut - 0.5) * (1.0 - LR_OVERSCAN) + 0.5;
         float srcH = LR_OriginalSize.y / vTiming.w;   // native lines
         float rpl = 1.0, ph = 0.0;                         // beam rows per line, row of line 0
-#ifdef LR_FIELDS
         // Amiga emulators draw every line twice (720x568 for a 256-line game) and weave the
         // two fields of an interlaced screen into the same rows. Identical row pairs are one
         // line: the gaps between lines stay, as on the real monitor. (0.5/255: 8-bit frames.)
@@ -537,7 +523,6 @@ void lr_main()
                 srcH = floor((srcH - ph) * 0.5);
             }
         }
-#endif
 
         // raster: TV modes sit in a 240/288-line field, VGA and 24 kHz arcade fill the screen
         bool vga = scan > 0.5 && scan < 1.5;
@@ -619,24 +604,13 @@ void lr_main()
         // the display gamut are clipped in SDR and kept in HDR
         if (vPhos > 1.5) col = phosphorMatrix(vPhos) * col;
 
-#ifdef LR_HDR
-        // HDR: the display has headroom above paper white, so bright phosphor dots and
-        // scanline centres keep their full brightness; the shoulder only starts near the peak
-        float room = max(LR_NITS_PEAK / LR_NITS_WHITE, 1.0);
-        col = room * shoulder(col / room);
-#else
         col = shoulder(col);
-#endif
         float r2 = clamp(dot(c, c) * 0.5, 0.0, 1.0);
         col *= 1.0 - LR_VIGNETTE * pow(r2, 1.6);
         col += LR_AMBIENT * vec3(0.80, 0.92, 0.87);
         col *= inside;
     }
 
-#ifndef LR_NO_FEEDBACK
-    vec3 prev = textureLod(LR_CRTFeedback, vTexCoord, 0.0).rgb;
-    col = max(col, prev * LR_PERSIST);
-#endif
     FragColor = vec4(col, 1.0);
 }
 

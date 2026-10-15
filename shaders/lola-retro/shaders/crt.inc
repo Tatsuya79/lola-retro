@@ -10,6 +10,7 @@
 //                   (the fields passes find out), not an interlaced frame
 //   LR_NO_FEEDBACK  no afterglow (the emulator has no feedback textures)
 //   LR_FIT_43       the tube stays 4:3 whatever shape the picture area has
+//   LR_PACKED_SPOT  the beam pass has no alpha channel, the spot is packed onto red
 
 #include "common.inc"
 
@@ -78,8 +79,22 @@ layout(set = 0, binding = 5) uniform sampler2D LR_Fields;
 vec4 beamAt(float i, float x, float lines)
 {
     if (i < 0.0 || i >= lines) return vec4(0.0);
+#ifdef LR_PACKED_SPOT
+    // the spot is packed onto red (see the beam pass), so the two samples are read and blended
+    // here instead of by the texture filter
+    int w = textureSize(LR_Beam, 0).x;
+    float t = x * float(w);
+    int m = int(floor(t));
+    vec3 a = texelFetch(LR_Beam, ivec2(clamp(m, 0, w - 1), int(i)), 0).rgb;
+    vec3 b = texelFetch(LR_Beam, ivec2(clamp(m + 1, 0, w - 1), int(i)), 0).rgb;
+    float qa = floor(a.r * 0.25), qb = floor(b.r * 0.25);
+    a.r -= 4.0 * qa;
+    b.r -= 4.0 * qb;
+    return mix(vec4(a, qa / 255.0), vec4(b, qb / 255.0), fract(t));
+#else
     vec2 bs = vec2(textureSize(LR_Beam, 0));
     return textureLod(LR_Beam, vec2(x + 0.5 / bs.x, (i + 0.5) / bs.y), 0.0);
+#endif
 }
 
 // Rear-projection screen: lenticular sheet with thin black stripes, no RGB pattern

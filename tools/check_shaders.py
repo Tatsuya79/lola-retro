@@ -3,8 +3,11 @@
 
 The .slang files are preprocessed the way RetroArch does: expands #include, drops the
 #pragma parameter/name/format lines, and splits the vertex and fragment stages.
-The .glsl files (tools/make_glsl.py) are compiled the way Amiberry does: once with
-"#define VERTEX" and once with "#define FRAGMENT" right after the #version line.
+The .glsl files (tools/make_glsl.py) are compiled the way their emulator does, once with
+"#define VERTEX" and once with "#define FRAGMENT":
+- Amiberry puts the defines right after the #version line;
+- 86Box keeps "#version" and the word after it, removes the #pragma parameter lines and any
+  "#define texture..." line, and puts an #extension line, the defines and "#line 1" in front.
 
 Usage: python3 tools/check_shaders.py
 Needs glslangValidator (package glslang-tools / glslang).
@@ -17,7 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SHADERS = ROOT / "shaders" / "lola-retro" / "shaders"
-GLSL = sorted((ROOT / "amiberry").glob("**/*.glsl"))
+AMIBERRY = sorted((ROOT / "amiberry").glob("**/*.glsl"))
+BOX86 = sorted((ROOT / "86box").glob("**/*.glsl"))
 
 
 def expand(path, seen=None):
@@ -62,17 +66,38 @@ def compile_stage(name, stage, text, args):
     return r.returncode == 0
 
 
+def amiberry_source(src, define):
+    cut = src.index("\n") + 1                      # after the #version line
+    return src[:cut] + f"#define {define}\n#define PARAMETER_UNIFORM\n" + src[cut:]
+
+
+def box86_source(src, define):
+    """As 86Box's OpenGLRenderer::compile_shader and glslp_parse assemble it."""
+    def blank(text, start):
+        i = text.find(start)
+        while i >= 0:
+            j = text.find("\n", i)
+            j = len(text) if j < 0 else j
+            text = text[:i] + " " * (j - i) + text[j:]
+            i = text.find(start)
+        return text
+    src = blank(blank(src, "#pragma parameter"), "#define texture")
+    version = re.search(r"^\s*(#version\s+\w+)", src, flags=re.M).group(1)
+    src = re.sub(r"^\s*#version\s+\w+", "", src, flags=re.M)
+    return (version + "\n" + "\n#extension GL_ARB_shading_language_420pack : enable\n"
+            + f"#define {define}\n#define PARAMETER_UNIFORM\n" + "\n#line 1\n" + src)
+
+
 def main():
     ok = True
     for slang in sorted(SHADERS.glob("*.slang")):
         for stage, src in split_stages(expand(slang)).items():
             ok &= compile_stage(slang.name, stage, "\n".join(src) + "\n", ["-V", "-o", "/dev/null"])
-    for glsl in GLSL:
-        src = glsl.read_text()
-        cut = src.index("\n") + 1                      # after the #version line
-        for stage, define in (("vertex", "VERTEX"), ("fragment", "FRAGMENT")):
-            text = src[:cut] + f"#define {define}\n#define PARAMETER_UNIFORM\n" + src[cut:]
-            ok &= compile_stage(glsl.name, stage, text, [])
+    for files, assemble, label in ((AMIBERRY, amiberry_source, "amiberry"), (BOX86, box86_source, "86box")):
+        for glsl in files:
+            src = glsl.read_text()
+            for stage, define in (("vertex", "VERTEX"), ("fragment", "FRAGMENT")):
+                ok &= compile_stage(f"{label}/{glsl.stem}", stage, assemble(src, define), [])
     sys.exit(0 if ok else 1)
 
 

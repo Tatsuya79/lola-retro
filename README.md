@@ -106,6 +106,12 @@ emulator: copy [`amiberry/lola-retro`](amiberry/lola-retro) into Amiberry's shad
 <sub>Amiberry with the 1084S preset: Cannon Fodder (PAL) and Super Stardust (AGA). The dithering stays visible as a
 fine texture, the lines show in darker areas, and the picture sits in the black border of the real monitor.</sub>
 
+## 86Box
+
+The PC monitor preset also comes as GLSL for [86Box](https://86box.net), the PC emulator: with the OpenGL
+renderer, add `86box/lola-retro/pc-monitor-vga.glslp` in **View → Renderer options…**. Same picture as in
+RetroArch, from text mode and 320×200 up to 1024×768; setup and settings in its [README](86box/lola-retro/README.md).
+
 ## Presets
 
 | | |
@@ -186,6 +192,7 @@ Measured on synthetic patterns:
 |---|---|
 | `shaders/lola-retro/` | The RetroArch shader pack (slang): 8 presets, each in a `curved/` and a `flat/` version, plus the same for HDR displays in `hdr/`. Details in its [README](shaders/lola-retro/README.md). |
 | `amiberry/lola-retro/` | The Amiga 1084S preset converted to GLSL for Amiberry. Details in its [README](amiberry/lola-retro/README.md). |
+| `86box/lola-retro/` | The PC monitor preset converted to GLSL for 86Box. Details in its [README](86box/lola-retro/README.md). |
 | `web/lola-retro.html` | The original WebGL version. Open it in a browser, try test scenes or drop in your own screenshots. |
 | `tools/` | Preset generator, GLSL converter, compile checker and headless preview renderers. |
 | `test-images/` | Native-resolution test frames used for the previews. |
@@ -195,10 +202,11 @@ Measured on synthetic patterns:
 
 ```
 python3 tools/make_presets.py     # regenerate the curved/ and flat/ .slangp files from one table
-python3 tools/make_glsl.py        # regenerate the Amiberry version (amiberry/) from the slang passes
+python3 tools/make_glsl.py        # regenerate the Amiberry and 86Box versions (amiberry/, 86box/) from the slang passes
 python3 tools/check_shaders.py    # compile every pass (slang and GLSL) with glslangValidator
 tools/render-preview.sh PRESET IMAGE OUT.png [glcore|vulkan]   # Linux: render a frame in headless RetroArch
 tools/amiberry-preview.py PRESET.glslp FRAME.png OUT.png       # render a frame the way Amiberry does (moderngl)
+tools/86box-preview.py PRESET.glslp FRAME.png OUT.png          # render a frame the way 86Box does (moderngl)
 ```
 
 ## License
