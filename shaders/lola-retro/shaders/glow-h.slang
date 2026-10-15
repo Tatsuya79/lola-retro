@@ -39,7 +39,7 @@ void main()
     {
         float w = exp(-0.5 * float(k * k) / 9.0);
         vec2 p = tc + vec2(float(k) * dx, 0.0);
-        vec3 c = 0.5 * (texture(Source, p - vec2(0.25 * dx, 0.0)).rgb + texture(Source, p + vec2(0.25 * dx, 0.0)).rgb);
+        vec3 c = 0.5 * (textureLod(Source, p - vec2(0.25 * dx, 0.0), 0.0).rgb + textureLod(Source, p + vec2(0.25 * dx, 0.0), 0.0).rgb);
         acc += w * pow(c, vec3(global.LR_GAMMA));
         ws += w;
     }

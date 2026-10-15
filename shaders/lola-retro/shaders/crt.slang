@@ -51,7 +51,7 @@ vec3 beamAt(float i, float x, float lines)
 {
     if (i < 0.0 || i >= lines) return vec3(0.0);
     vec2 bs = vec2(textureSize(LR_Beam, 0));
-    return texture(LR_Beam, vec2(x + 0.5 / bs.x, (i + 0.5) / bs.y)).rgb;
+    return textureLod(LR_Beam, vec2(x + 0.5 / bs.x, (i + 0.5) / bs.y), 0.0).rgb;
 }
 
 // Rear-projection screen: lenticular sheet with thin black stripes, no RGB pattern
@@ -187,7 +187,7 @@ void main()
         // halation: light diffused in the glass (energy-conserving)
         float gy = Lf / BH;
         float gin = smoothstep(-0.03, 0.03, gy) * smoothstep(1.03, 0.97, gy) * smoothstep(-0.03, 0.03, ua.x) * smoothstep(1.03, 0.97, ua.x);
-        col = mix(col, texture(LR_Glow, vec2(ua.x, gy)).rgb * vWhite, global.LR_GLOW * gin);
+        col = mix(col, textureLod(LR_Glow, vec2(ua.x, gy), 0.0).rgb * vWhite, global.LR_GLOW * gin);
 
         col = shoulder(col);
         float r2 = clamp(dot(c, c) * 0.5, 0.0, 1.0);
@@ -196,7 +196,7 @@ void main()
         col *= inside;
     }
 
-    vec3 prev = texture(LR_CRTFeedback, vTexCoord).rgb;
+    vec3 prev = textureLod(LR_CRTFeedback, vTexCoord, 0.0).rgb;
     col = max(col, prev * global.LR_PERSIST);
     FragColor = vec4(col, 1.0);
 }

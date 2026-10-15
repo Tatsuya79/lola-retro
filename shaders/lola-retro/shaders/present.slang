@@ -21,7 +21,7 @@ layout(set = 0, binding = 2) uniform sampler2D Source;
 
 void main()
 {
-    vec3 c = pow(max(texture(Source, vTexCoord).rgb, 0.0), vec3(1.0 / 2.2));
+    vec3 c = pow(max(textureLod(Source, vTexCoord, 0.0).rgb, 0.0), vec3(1.0 / 2.2));
     vec2 fc = vTexCoord * params.OutputSize.xy;
     c += (hash13(vec3(fc, 1.0)) - 0.5) / 255.0;
     FragColor = vec4(c, 1.0);

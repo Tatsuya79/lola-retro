@@ -29,7 +29,7 @@ layout(set = 0, binding = 3) uniform sampler2D Original;  // used directly for R
 vec2 sig(float s, float y)
 {
     if (y < 0.0) return vec2(0.0);
-    return texture(Source, vec2((s + 0.5) * params.SourceSize.z, (y + 0.5) * params.SourceSize.w)).rg;
+    return textureLod(Source, vec2((s + 0.5) * params.SourceSize.z, (y + 0.5) * params.SourceSize.w), 0.0).rg;
 }
 
 // Original pixel at x position xs on the native line that starts at row y (k rows averaged)
@@ -39,7 +39,7 @@ vec3 origPix(float xs, float y, float k)
     float u = (floor(xs) + 0.5) * params.OriginalSize.z;
     vec3 c = vec3(0.0);
     for (float r = 0.0; r < k; r += 1.0)
-        c += texture(Original, vec2(u, (y + r + 0.5) * params.OriginalSize.w)).rgb;
+        c += textureLod(Original, vec2(u, (y + r + 0.5) * params.OriginalSize.w), 0.0).rgb;
     return c / k;
 }
 

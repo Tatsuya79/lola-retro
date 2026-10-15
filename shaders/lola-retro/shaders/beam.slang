@@ -46,8 +46,8 @@ void main()
 
     // spot size in physical units: 1 = one pixel of a 320-wide mode
     float h = max(global.LR_HFOCUS, 0.05) / 320.0;
-    vec3 c = 0.25 * texture(LR_Decoded, tc - vec2(h, 0.0)).rgb + 0.5 * texture(LR_Decoded, tc).rgb
-           + 0.25 * texture(LR_Decoded, tc + vec2(h, 0.0)).rgb;
+    vec3 c = 0.25 * textureLod(LR_Decoded, tc - vec2(h, 0.0), 0.0).rgb + 0.5 * textureLod(LR_Decoded, tc, 0.0).rgb
+           + 0.25 * textureLod(LR_Decoded, tc + vec2(h, 0.0), 0.0).rgb;
 
     // misconvergence: red and blue land a fraction of a pixel off green, more toward the edges.
     // First-order shift over a one-pixel baseline keeps single-pixel detail intact.
@@ -56,7 +56,7 @@ void main()
     if (abs(conv) > 0.01)
     {
         float H1 = params.OriginalSize.z;
-        vec3 g = 0.5 * (texture(LR_Decoded, tc + vec2(H1, 0.0)).rgb - texture(LR_Decoded, tc - vec2(H1, 0.0)).rgb);
+        vec3 g = 0.5 * (textureLod(LR_Decoded, tc + vec2(H1, 0.0), 0.0).rgb - textureLod(LR_Decoded, tc - vec2(H1, 0.0), 0.0).rgb);
         c.r -= g.r * conv;
         c.b += g.b * conv;
     }

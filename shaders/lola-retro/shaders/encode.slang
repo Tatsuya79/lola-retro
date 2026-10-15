@@ -30,7 +30,7 @@ vec3 srcPix(float xs, float y, float k)
     float u = (floor(xs) + 0.5) * params.SourceSize.z;
     vec3 c = vec3(0.0);
     for (float r = 0.0; r < k; r += 1.0)
-        c += texture(Source, vec2(u, (y + r + 0.5) * params.SourceSize.w)).rgb;
+        c += textureLod(Source, vec2(u, (y + r + 0.5) * params.SourceSize.w), 0.0).rgb;
     return c / k;
 }
 

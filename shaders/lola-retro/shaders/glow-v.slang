@@ -26,7 +26,7 @@ void main()
     for (int k = -6; k <= 6; k++)
     {
         float w = exp(-0.5 * float(k * k) / 9.0);
-        acc += w * texture(Source, vTexCoord + vec2(0.0, float(k) * params.SourceSize.w)).rgb;
+        acc += w * textureLod(Source, vTexCoord + vec2(0.0, float(k) * params.SourceSize.w), 0.0).rgb;
         ws += w;
     }
     FragColor = vec4(acc / ws, 1.0);
