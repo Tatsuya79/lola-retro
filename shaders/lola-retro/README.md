@@ -85,15 +85,15 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu ‚
 | Sharpness, Colour, Tint, Brightness, Contrast | The TV's own knobs. Tint only exists on NTSC sets. |
 | RF noise | Snow on the antenna input. |
 | No flicker | On by default. Freezes dot crawl and draws both interlaced fields every frame. Turn it off for the real moving dot crawl and 480i field flicker. |
-| Beam width in dark areas / on white | The beam grows with brightness, so bright lines merge and dark lines show gaps. |
-| Horizontal focus | Spot size; 1 = one pixel of a 320-wide mode. |
+| Beam width in dark areas / on white | The beam spot grows with brightness, in both directions: bright lines merge and bright detail rounds off, dark lines show gaps and dark detail stays sharp. |
+| Horizontal focus | Horizontal spot size relative to the vertical one; 0.5 = a round spot. |
 | Tube gamma | 2.4 is typical. |
 | Phosphor afterglow | Real phosphors fade within about a millisecond, so keep this low. |
 | Misconvergence | How far the red and blue beams land from green, growing toward the edges. |
 | Mask | 0 none, 1 aperture grille, 2 slot mask, 3 shadow mask, 4 projection screen. |
 | Mask strength / triads per screen height | Lower the triad count for a coarser mask. Below about 2 screen pixels per triad the mask fades out to avoid moir√©, so the fine PC mask shows best at 4K. |
 | White point | 6500 K neutral, 9300 K is the bluish white many TVs and monitors had. |
-| Curvature, Rounded corners, Glass glow, Darker edges, Overscan, Room reflection | The glass. Set curvature and corners to 0 for a flat screen (that is all the `flat` presets change). Negative overscan adds a black border, like PC monitors. |
+| Curvature, Rounded corners, Glass glow, Glass glow size, Darker edges, Overscan, Room reflection | The glass. Glass glow sets how strong the halo around bright things is, Glass glow size how far it reaches. Set curvature and corners to 0 for a flat screen (that is all the `flat` presets change). Negative overscan adds a black border, like PC monitors. |
 
 ### Console timing ids
 

@@ -44,6 +44,7 @@ layout(push_constant) uniform Push
 #pragma parameter LR_CURV_Y "Curvature vertical" 0.06 0.0 0.15 0.005
 #pragma parameter LR_CORNER "Rounded corners" 0.045 0.0 0.1 0.005
 #pragma parameter LR_GLOW "Glass glow" 0.06 0.0 0.4 0.01
+#pragma parameter LR_GLOW_SIZE "Glass glow size" 0.5 0.2 1.5 0.05
 #pragma parameter LR_VIGNETTE "Darker edges" 0.3 0.0 0.7 0.01
 #pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" 0.05 -0.08 0.12 0.005
 #pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0.0 0.03 0.001
@@ -82,6 +83,7 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_CURV_Y;
     float LR_CORNER;
     float LR_GLOW;
+    float LR_GLOW_SIZE;
     float LR_VIGNETTE;
     float LR_OVERSCAN;
     float LR_AMBIENT;

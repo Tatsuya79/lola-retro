@@ -25,7 +25,7 @@ layout(set = 0, binding = 2) uniform sampler2D Source;
 
 void main()
 {
-    float dx = params.OutputSize.z;
+    float dx = params.OutputSize.z * global.LR_GLOW_SIZE;   // tap spacing sets the radius
     vec2 tc = vTexCoord;
     if (vScale > 1.5)
     {

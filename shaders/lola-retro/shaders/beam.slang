@@ -44,23 +44,34 @@ void main()
     float jit = jitter > 0.0 ? (hash13(vec3(i, seed, 5.0)) - 0.5) * jitter * params.OriginalSize.z : 0.0;
     vec2 tc = vec2(x + jit, (i * vScale + 0.5) * params.OriginalSize.w);   // first row of the line
 
-    // spot size in physical units: 1 = one pixel of a 320-wide mode
-    float h = max(global.LR_HFOCUS, 0.05) / 320.0;
-    vec3 c = 0.25 * textureLod(LR_Decoded, tc - vec2(h, 0.0), 0.0).rgb + 0.5 * textureLod(LR_Decoded, tc, 0.0).rgb
-           + 0.25 * textureLod(LR_Decoded, tc + vec2(h, 0.0), 0.0).rgb;
-
-    // misconvergence: red and blue land a fraction of a pixel off green, more toward the edges.
-    // First-order shift over a one-pixel baseline keeps single-pixel detail intact.
-    float cx = (x - 0.5) * 2.0 / (1.0 - global.LR_OVERSCAN);   // position on the tube face, -1..1
-    float conv = clamp(global.LR_CONV * (0.35 + 0.65 * cx * abs(cx)) * params.OriginalSize.x / 320.0, -1.0, 1.0);
-    if (abs(conv) > 0.01)
+    // Horizontal spot: like the vertical one, a Gaussian whose width grows with brightness,
+    // so bright detail spreads and rounds off while dark detail stays sharp.
+    // Every point along the line spreads its own light with its own width (energy is kept).
+    // Units: 1 = one pixel of a 320-wide mode, the same physical size as one TV line;
+    // Horizontal focus 0.5 makes the spot round.
+    float f = 2.0 * max(global.LR_HFOCUS, 0.05) / 320.0;
+    float sLo = global.LR_SIG_LO * f;
+    float sHi = max(global.LR_SIG_LO, global.LR_SIG_HI) * f;
+    float dt = sLo;                                        // tap spacing (a Gaussian sampled at 1 sigma still sums exactly)
+    int nt = int(min(ceil(3.0 * sHi / dt), 16.0));
+    vec3 acc = vec3(0.0), dacc = vec3(0.0);
+    for (int k = -nt; k <= nt; k++)
     {
-        float H1 = params.OriginalSize.z;
-        vec3 g = 0.5 * (textureLod(LR_Decoded, tc + vec2(H1, 0.0), 0.0).rgb - textureLod(LR_Decoded, tc - vec2(H1, 0.0), 0.0).rgb);
-        c.r -= g.r * conv;
-        c.b += g.b * conv;
+        float o = float(k) * dt;                           // tap position minus x
+        vec3 b = pow(clamp(textureLod(LR_Decoded, tc + vec2(o, 0.0), 0.0).rgb, 0.0, 1.0), vec3(0.5 * global.LR_GAMMA));
+        vec3 is = 1.0 / mix(vec3(sLo), vec3(sHi), b);      // 1 / spot width of that point
+        vec3 g = exp(-0.5 * o * o * is * is) * is * (0.39894228 * dt);
+        acc += b * b * g;                                  // linear light
+        dacc += b * b * g * o * is * is;                   // derivative along x, for convergence
     }
 
-    // tube gamma; the square root is stored because the CRT pass needs both it and its square
-    FragColor = vec4(pow(clamp(c, 0.0, 1.0), vec3(0.5 * global.LR_GAMMA)), 1.0);
+    // misconvergence: red and blue land a fraction of a pixel off green, more toward the edges
+    float cx = (x - 0.5) * 2.0 / (1.0 - global.LR_OVERSCAN);   // position on the tube face, -1..1
+    float conv = clamp(global.LR_CONV * (0.35 + 0.65 * cx * abs(cx)) * params.OriginalSize.x / 320.0, -1.0, 1.0);
+    float sh = conv * params.OriginalSize.z;
+    acc.r -= dacc.r * sh;
+    acc.b += dacc.b * sh;
+
+    // the square root is stored because the CRT pass needs both it and its square
+    FragColor = vec4(sqrt(max(acc, 0.0)), 1.0);
 }
