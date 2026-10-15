@@ -135,6 +135,17 @@ it follows from each console's real timing.
 
 ![240p Test Suite, Mega Drive](docs/240p-suite-mega-drive.jpg)
 
+**PC monitor.** The same patch of glass in four PC modes: 1-pixel stripes both ways and a 30% grey area. In
+320×200 the stripes are fully resolved and the lines show in the grey; by 1024×768 the stripes have almost
+merged, as they did on a 15-inch tube, whose beam spot was about 1.6 pixels wide at that resolution.
+
+![PC monitor test patterns](docs/pc-monitor-patterns.jpg)
+
+A Windows 95 dialog in 640×480: text stays sharp and the dotted focus rectangle around Cancel keeps its
+dots, the way photos of real VGA monitors show it.
+
+![Windows 95 dialog on the PC monitor](docs/pc-monitor-dialog.jpg)
+
 Measured on synthetic patterns:
 
 | Test | Result |
