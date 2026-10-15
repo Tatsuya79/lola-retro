@@ -35,7 +35,7 @@ Systems that are not in that list use the id whose timing matches theirs.
 
 | Hardware | Core | Preset | Console timing | Settings |
 |---|---|---|---|---|
-| 15 kHz arcade (CPS1/2, Neo Geo MVS, most 80s and 90s boards) | FinalBurn Neo, MAME | Amiga 1084S | auto, or 8 | Arcade monitors were 15 kHz RGB. Vertical games: RetroArch rotates the whole picture, including scanlines and mask, the same as a monitor turned on its side. |
+| 15 kHz arcade (CPS1/2, Neo Geo MVS, most 80s and 90s boards) | FinalBurn Neo, MAME | Amiga 1084S | auto, or 8 | Arcade monitors were 15 kHz RGB. Vertical games: RetroArch rotates the whole picture, including scanlines and mask, the same as a monitor turned on its side. The 1084S shows the whole picture with a black border; raise Overscan to fill the screen like an arcade monitor. |
 | Medium-res 24 kHz (Sega Model 1/2 at 496×384) | MAME | CRT Projector (deluxe cabinets) or Studio Monitor (RGB) | auto (9) | |
 
 ## 32-bit and 64-bit
@@ -62,7 +62,7 @@ and the picture is stable. Turn it off to see the fields alternate like on a rea
 | System | Core | Preset | Console timing | Settings |
 |---|---|---|---|---|
 | DOS, Windows 9x | DOSBox Pure | PC Monitor (VGA) | 7 (set by the preset) | Every PC mode on one 15-inch monitor: 320×200 is drawn with VGA line doubling (400 lines), 640×480 up to 1024×768 on the same tube. |
-| Amiga | PUAE | Amiga 1084S | auto (6) | Use a low-resolution (320-wide) or high-resolution (640-wide) mode without extra borders, so the frame is 320×256 or 640×512 on PAL. Otherwise set timing 6 by hand. |
+| Amiga | PUAE | Amiga 1084S | auto (6) | Use a low-resolution (320-wide) or high-resolution (640-wide) mode without extra borders, so the frame is 320×256 / 640×512 (PAL) or 320×200 / 640×400 (NTSC). Otherwise set timing 6 by hand. The preset shows the whole picture with a black border, like the real monitor; raise Overscan to fill the screen. |
 
 ## Not covered
 

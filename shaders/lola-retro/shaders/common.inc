@@ -51,12 +51,13 @@ layout(push_constant) uniform Push
 #pragma parameter LR_VIGNETTE "Darker edges" 0.3 0.0 0.7 0.01
 #pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" 0.05 -0.08 0.12 0.005
 #pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0.0 0.03 0.001
-#pragma parameter LR_HDR_PC "--- PC monitor (31 kHz modes) ---" 0.0 0.0 0.0 1.0
-#pragma parameter LR_PC_SIZE "Monitor size (inches)" 15.0 14.0 21.0 1.0
-#pragma parameter LR_PC_PITCH "Dot pitch (mm)" 0.28 0.20 0.45 0.01
-#pragma parameter LR_PC_SPOT_LO "Spot size in dark areas (mm)" 0.30 0.10 0.80 0.01
-#pragma parameter LR_PC_SPOT_HI "Spot size on white (mm)" 0.45 0.15 1.00 0.01
-#pragma parameter LR_PC_CORNER "Spot size in the corners (x centre)" 1.4 1.0 2.5 0.05
+#pragma parameter LR_HDR_MON "--- Monitor in millimetres (PC monitors, Amiga 1084S) ---" 0.0 0.0 0.0 1.0
+#pragma parameter LR_MON_MM "15 kHz monitor in mm (PC monitors always)" 0.0 0.0 1.0 1.0
+#pragma parameter LR_MON_SIZE "Monitor size (inches)" 15.0 10.0 21.0 1.0
+#pragma parameter LR_MON_PITCH "Dot pitch (mm)" 0.28 0.20 0.70 0.01
+#pragma parameter LR_MON_SPOT_LO "Spot size in dark areas (mm)" 0.30 0.10 1.00 0.01
+#pragma parameter LR_MON_SPOT_HI "Spot size on white (mm)" 0.45 0.15 1.50 0.01
+#pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.4 1.0 2.5 0.05
 
 layout(std140, set = 0, binding = 0) uniform UBO
 {
@@ -99,12 +100,13 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_VIGNETTE;
     float LR_OVERSCAN;
     float LR_AMBIENT;
-    float LR_HDR_PC;
-    float LR_PC_SIZE;
-    float LR_PC_PITCH;
-    float LR_PC_SPOT_LO;
-    float LR_PC_SPOT_HI;
-    float LR_PC_CORNER;
+    float LR_HDR_MON;
+    float LR_MON_MM;
+    float LR_MON_SIZE;
+    float LR_MON_PITCH;
+    float LR_MON_SPOT_LO;
+    float LR_MON_SPOT_HI;
+    float LR_MON_CORNER;
 #ifdef LR_HDR
     float LR_HDR_OUT;
     float LR_NITS_WHITE;
@@ -144,8 +146,10 @@ float hash13(vec3 p3)
 float autoConsole(vec2 s)
 {
     float w = s.x, h = s.y;
-    if ((w == 320.0 && h == 200.0) || (w == 640.0 && (h == 350.0 || h == 400.0))) return 7.0;
+    bool mon15 = global.LR_MON_MM > 0.5;    // a 15 kHz monitor cannot show 31 kHz VGA
+    if (!mon15 && ((w == 320.0 && h == 200.0) || (w == 640.0 && (h == 350.0 || h == 400.0)))) return 7.0;
     if (h == 256.0 || h == 512.0 || (w == 640.0 && h == 200.0)) return 6.0;
+    if (mon15 && (h == 200.0 || h == 400.0) && (w == 320.0 || w == 640.0)) return 6.0;
     if (h >= 336.0 && h <= 400.0 && w >= 400.0) return 9.0;
     if (h > 300.0) return 5.0;
     if (w > 420.0) return 4.0;
@@ -257,9 +261,12 @@ float vSign(float y, Timing t)
 }
 
 // ---------------------------------------------------------------------------
-// PC monitor (31 kHz modes): the tube is described in millimetres, so every video mode
-// (320x200 doubled to 400 lines, 640x480, 800x600, 1024x768) follows from the same tube.
-// Typical mid-90s 15-inch monitor: 13.8-14 inch viewable, 0.28 mm dot pitch, a spot of
+// Monitor in millimetres: PC monitors (31 kHz modes) always, and 15 kHz monitors such as
+// the Commodore 1084S when "15 kHz monitor in mm" is on. The tube is described like on its
+// spec sheet (size, mask pitch, beam spot on dark and on white), so every video mode follows
+// from the same tube: 320x200 doubled to 400 lines or 1024x768 on a PC monitor, PAL or NTSC
+// on the 1084S (NTSC lines sit further apart, so they show more).
+// Typical mid-90s 15-inch PC monitor: 13.8-14 inch viewable, 0.28 mm dot pitch, a spot of
 // about 0.45 mm on white (sharp at 800x600, soft at 1024x768), dynamic focus keeping the
 // corners below 1.5 x the centre spot.
 // ---------------------------------------------------------------------------
@@ -268,18 +275,31 @@ const float FWHM_TO_SIGMA = 0.4246609;   // Gaussian: sigma = FWHM / (2 sqrt(2 l
 
 bool isPC(float scan) { return scan > 0.5 && scan < 1.5; }
 
+// the tube is described in mm
+bool inMM(float scan) { return isPC(scan) || (scan < 0.5 && global.LR_MON_MM > 0.5); }
+
 // Viewable tube face in mm: one inch less than the nominal size, 4:3
-vec2 pcTubeMM()
+vec2 monTubeMM()
 {
-    float d = (global.LR_PC_SIZE - 1.0) * 25.4;
+    float d = (global.LR_MON_SIZE - 1.0) * 25.4;
     return vec2(0.8 * d, 0.6 * d);
 }
 
-// The picture is smaller than the tube face when overscan is negative (black border)
-vec2 pcPictureMM() { return pcTubeMM() / (1.0 - global.LR_OVERSCAN); }
+// The full scan (active line x active lines) in mm: smaller than the tube face when
+// overscan is negative (black border), larger when it is positive
+vec2 monScanMM() { return monTubeMM() / (1.0 - global.LR_OVERSCAN); }
 
 // The spot grows toward the corners (deflection defocus); c is the position on the tube, -1..1
-float pcCornerGrowth(vec2 c) { return 1.0 + (global.LR_PC_CORNER - 1.0) * 0.5 * dot(c, c); }
+float monCornerGrowth(vec2 c) { return 1.0 + (global.LR_MON_CORNER - 1.0) * 0.5 * dot(c, c); }
+
+// Share of the active line that the source covers. A 15 kHz monitor in mm shows the whole
+// active line (52.6 us NTSC, 52 us PAL), so a 320-pixel Amiga line (45 us) leaves side
+// borders, like the real 1084S. PC monitors and the TV model fill the width.
+float activeShare(Timing t, vec2 orig)
+{
+    if (!(t.scan < 0.5 && global.LR_MON_MM > 0.5)) return 1.0;
+    return min(orig.x / t.pclk / (t.pal > 0.5 ? 52.0 : 52.6), 1.0);
+}
 
 // Standard normal density and cumulative distribution
 // (erf after Abramowitz & Stegun 7.1.26, error below 1.5e-7)

@@ -15,6 +15,7 @@ layout(location = 0) out vec2 vTexCoord;
 layout(location = 1) flat out vec3 vWhite;
 layout(location = 2) flat out vec4 vTiming;   // scan mode, PAL, interlaced, internal resolution
 layout(location = 3) flat out float vPhos;    // phosphor set
+layout(location = 4) flat out float vShare;   // share of the active line the source covers
 
 // Blackbody colour of the TV's white, relative to D65
 vec3 kelvinRGB(float T)
@@ -36,6 +37,7 @@ void main()
     Timing T = getTiming(params.OriginalSize.xy, params.FrameCount);
     vTiming = vec4(T.scan, T.pal, T.interlace, T.scale);
     vPhos = phosphorSet(T);
+    vShare = activeShare(T, params.OriginalSize.xy);
     // the white is set on the phosphor drives so that it ends up at the chosen colour temperature
     if (vPhos > 1.5) vWhite = inverse(phosphorMatrix(vPhos)) * vWhite;
 }
@@ -45,6 +47,7 @@ layout(location = 0) in vec2 vTexCoord;
 layout(location = 1) flat in vec3 vWhite;
 layout(location = 2) flat in vec4 vTiming;
 layout(location = 3) flat in float vPhos;
+layout(location = 4) flat in float vShare;
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 2) uniform sampler2D LR_Beam;
 layout(set = 0, binding = 3) uniform sampler2D LR_Glow;
@@ -139,6 +142,10 @@ void main()
 
         // raster: TV modes sit in a 240/288-line field, VGA and 24 kHz arcade fill the screen
         bool vga = scan > 0.5 && scan < 1.5;
+        bool mm = inMM(scan);                              // tube described in mm (PC monitor, 1084S)
+        // position along the source line: a 15 kHz monitor in mm shows the whole active line,
+        // so a source shorter than the line leaves side borders
+        float xs = (ua.x - 0.5) / vShare + 0.5;
         float dbl = (vga && srcH <= 300.0) ? 2.0 : 1.0;
         float BH = srcH * dbl;
         float visLines = scan > 0.5 ? BH : (pal > 0.5 ? 288.0 : 240.0) * (interlace > 0.5 ? 2.0 : 1.0);
@@ -153,12 +160,13 @@ void main()
 
         // vertical convergence error grows toward the edges (the horizontal one is in the beam pass)
         float convV = global.LR_CONV * 0.5 * (0.3 + 0.7 * c.y * abs(c.y));
-        // spot height in lines: TV in line units; PC monitor from mm on its tube, so the
-        // same spot covers more lines in 768-line modes than in 400-line ones
+        // spot height in lines: TV in line units; a tube in mm from its line pitch, so the same
+        // spot covers more lines in 768-line modes than in 400-line ones, and NTSC lines (fewer,
+        // further apart) show more than PAL lines
         vec2 sig = vec2(global.LR_SIG_LO, max(global.LR_SIG_LO, global.LR_SIG_HI)) * sgk;
-        if (vga)
-            sig = vec2(global.LR_PC_SPOT_LO, max(global.LR_PC_SPOT_LO, global.LR_PC_SPOT_HI))
-                * (FWHM_TO_SIGMA * pcCornerGrowth(c) * BH / pcPictureMM().y);
+        if (mm)
+            sig = vec2(global.LR_MON_SPOT_LO, max(global.LR_MON_SPOT_LO, global.LR_MON_SPOT_HI))
+                * (FWHM_TO_SIGMA * monCornerGrowth(c) * visLines / monScanMM().y);
 
         // every line within 3.5 spot widths: the lines left out are at least kn + 1 away
         // (4 lines for 240p TV, more for wide spots: merged fields, 1024x768 on a PC monitor)
@@ -167,21 +175,21 @@ void main()
         {
             float j = j0 + float(k);
             float i = j * stepL + offL;
-            vec4 bb = beamAt(floor(i / dbl), ua.x, srcH);
+            vec4 bb = beamAt(floor(i / dbl), xs, srcH);
             vec3 b = bb.rgb;
             vec3 lc = b * b;                                      // linear brightness
             // beam height: TV from the local brightness per gun; PC from the spot that made the light
-            vec3 isg = 1.0 / mix(vec3(sig.x), vec3(sig.y), vga ? vec3(bb.a) : b);
+            vec3 isg = 1.0 / mix(vec3(sig.x), vec3(sig.y), mm ? vec3(bb.a) : b);
             vec3 d = vec3(u - j) + vec3(convV, 0.0, -convV);
             col += lc * exp(-0.5 * d * d * isg * isg) * isg * 0.39894228;
         }
-        col *= smoothstep(-0.002, 0.002, ua.x) * smoothstep(1.002, 0.998, ua.x);
+        col *= smoothstep(-0.002, 0.002, xs) * smoothstep(1.002, 0.998, xs);
 
         // phosphor mask
         float mt = global.LR_MASK_TYPE;
         float triads = global.LR_MASK_TRIADS;
-        // PC monitor: from the dot pitch (a dot mask's pitch is diagonal, 0.866 of it horizontal)
-        if (vga) triads = pcTubeMM().y / (global.LR_PC_PITCH * (mt > 2.5 && mt < 3.5 ? 0.866 : 1.0));
+        // tube in mm: from the mask pitch (a dot mask's pitch is diagonal, 0.866 of it horizontal)
+        if (mm) triads = monTubeMM().y / (global.LR_MON_PITCH * (mt > 2.5 && mt < 3.5 ? 0.866 : 1.0));
         float pitchPx = params.OutputSize.y / triads;
         float str = global.LR_MASK_STR * smoothstep(1.6, 2.6, pitchPx);
         if (mt > 0.5 && str > 0.0)
@@ -205,8 +213,8 @@ void main()
 
         // halation: light diffused in the glass (energy-conserving)
         float gy = Lf / BH;
-        float gin = smoothstep(-0.03, 0.03, gy) * smoothstep(1.03, 0.97, gy) * smoothstep(-0.03, 0.03, ua.x) * smoothstep(1.03, 0.97, ua.x);
-        col = mix(col, textureLod(LR_Glow, vec2(ua.x, gy), 0.0).rgb * vWhite, global.LR_GLOW * gin);
+        float gin = smoothstep(-0.03, 0.03, gy) * smoothstep(1.03, 0.97, gy) * smoothstep(-0.03, 0.03, xs) * smoothstep(1.03, 0.97, xs);
+        col = mix(col, textureLod(LR_Glow, vec2(xs, gy), 0.0).rgb * vWhite, global.LR_GLOW * gin);
 
         // the tube's phosphors are not exactly the display's primaries; colours outside
         // the display gamut are clipped in SDR and kept in HDR

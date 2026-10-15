@@ -85,6 +85,13 @@ and 1024×768 is a little soft, as it really was on a 15-inch screen.
 
 ![PC monitor at 320x200, 640x480 and 1024x768](docs/pc-monitor-modes.jpg)
 
+The Amiga 1084S preset is built the same way, from the monitor's service manual: 0.42 mm slot mask, 6.5 MHz
+amplifier, D65 white, and the whole picture with a black border around it. Because its beam is described in
+millimetres, NTSC games (200 lines, further apart) show stronger lines than PAL games (256 lines), as on the
+real monitor. The beam was calibrated on a photo of a real 1084S.
+
+![The same text on the 1084S in PAL and NTSC](docs/amiga-1084s-pal-ntsc.jpg)
+
 ## Presets
 
 | | |
@@ -107,8 +114,9 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
 - **Electron beam.** Each line is a spot whose width grows with brightness, in both directions and per colour gun.
   Bright detail merges and rounds off, dark detail stays sharp. Interlaced fields alternate; VGA 200-line modes are drawn twice.
 - **Phosphor mask.** Aperture grille (with Trinitron damper wires), slot mask, shadow mask, or a projection screen.
-- **PC monitor.** 31 kHz modes use a tube described in millimetres (size, dot pitch, beam spot on dark and on
-  white, larger in the corners), so 320×200, 640×480, 800×600 and 1024×768 each look as they did on a 15-inch monitor.
+- **Monitors in millimetres.** PC monitors (31 kHz) and the Amiga 1084S use a tube described in millimetres (size,
+  mask pitch, beam spot on dark and on white, larger in the corners), so 320×200, 640×480, 800×600 and 1024×768 each
+  look as they did on a 15-inch monitor, and NTSC Amiga games show stronger lines than PAL ones.
 - **Colour of the TV.** US and Japanese TVs demodulate with "red push" (axes and gains from the Sony CXA2025AS
   datasheet), PAL TVs by the standard; phosphors are SMPTE-C, EBU or Japanese P22 instead of sRGB.
 - **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow.
@@ -156,6 +164,7 @@ Measured on synthetic patterns:
 | Comb filter and S-Video | no false colour |
 | RGB bandwidth | about 6.5 MHz, like a consumer TV's video amplifier |
 | PC monitor, 320×200 to 1024×768 | spot width, 1-pixel stripe contrast, line structure and brightness within 2% of the physics |
+| Amiga 1084S | line contrast inside text matched to a photo of a real monitor; NTSC 40%, PAL 27% in the same text |
 
 ## What is in here
 

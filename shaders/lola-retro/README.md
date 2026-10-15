@@ -40,7 +40,7 @@ Every folder has the same 8 presets.
 | `old-tv-rf` | Nostalgia for the antenna cable. Noisy on purpose. | Old TV on the antenna input. RF snow, ghosting, soft focus, round tube. |
 | `crt-projector` | 24 kHz arcade games such as Daytona USA (Sega Model 2). | Arcade CRT projector (three tubes on a flat screen). No mask, colour fringes, soft. |
 | `pc-monitor-vga` | DOS and Windows 9x games (320×200 up to 1024×768), Dreamcast on the VGA cable. | A typical mid-90s 15-inch PC monitor, described in millimetres (see [PC monitor](#pc-monitor)). 320×200 is drawn twice (400 lines), fine dot mask, black border. |
-| `amiga-1084s` | Amiga, and 15 kHz arcade games (CPS1/2, Neo Geo MVS). | Commodore 1084S on RGB. 15 kHz like a TV, sharp. |
+| `amiga-1084s` | Amiga, and 15 kHz arcade games (CPS1/2, Neo Geo MVS). | Commodore 1084S on RGB, built from its service manual (see [Amiga 1084S](#amiga-1084s)). 0.42 mm slot mask, the whole picture with a black border. |
 
 The CRT projector already has a flat screen, so its `curved` version only adds rounded corners.
 
@@ -91,20 +91,21 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | Colour decoder | 0 auto, 1 standard, 2 US TV, 3 Japanese TV. American and Japanese TVs decoded colour on shifted axes with extra red gain ("red push"): yellows lean orange, reds are stronger, skin looks warmer. Auto uses the US TV decoder (Sony CXA2025AS) for NTSC on composite, RF and S-Video, and the standard one for PAL and RGB. |
 | RF noise | Snow on the antenna input. |
 | No flicker | On by default. Freezes dot crawl and draws both interlaced fields every frame. Turn it off for the real moving dot crawl and 480i field flicker. |
-| Beam width in dark areas / on white | The beam spot grows with brightness, in both directions: bright lines merge and bright detail rounds off, dark lines show gaps and dark detail stays sharp. TVs and 15 kHz monitors; a PC monitor uses the spot sizes in mm below. |
-| Horizontal focus | Horizontal spot size relative to the vertical one; 0.5 = a round spot. Not used on PC monitors (their spot is round). |
+| Beam width in dark areas / on white | The beam spot grows with brightness, in both directions: bright lines merge and bright detail rounds off, dark lines show gaps and dark detail stays sharp. TVs; monitors in mm (PC monitors, the 1084S) use the spot sizes in mm below. |
+| Horizontal focus | Horizontal spot size relative to the vertical one; 0.5 = a round spot. Not used on monitors in mm (their spot is round). |
 | Tube gamma | 2.4 is typical. |
 | Phosphor afterglow | Real phosphors fade within about a millisecond, so keep this low. |
 | Misconvergence | How far the red and blue beams land from green, growing toward the edges. |
 | Mask | 0 none, 1 aperture grille, 2 slot mask, 3 shadow mask, 4 projection screen. |
-| Mask strength / triads per screen height | Lower the triad count for a coarser mask. Below about 2 screen pixels per triad the mask fades out to avoid moiré, so the fine PC mask shows best at 4K. On PC monitors the triad count comes from the dot pitch instead. |
+| Mask strength / triads per screen height | Lower the triad count for a coarser mask. Below about 2 screen pixels per triad the mask fades out to avoid moiré, so the fine PC mask shows best at 4K. On monitors in mm the triad count comes from the mask pitch instead. |
 | White point | 6500 K neutral, 9300 K is the bluish white many TVs and monitors had. |
 | Phosphors | 0 auto, 1 sRGB, 2 SMPTE-C, 3 EBU, 4 Japanese P22. The colours of the tube's phosphors. Auto: SMPTE-C on NTSC sets, EBU on PAL sets, sRGB on PC monitors, Japanese P22 on arcade monitors; the Trinitron preset uses Japanese P22 and the studio monitor EBU. Colours outside your display's range are clipped in SDR and kept in HDR. |
 | Curvature, Rounded corners, Glass glow, Glass glow size, Darker edges, Overscan, Room reflection | The glass. Glass glow sets how strong the halo around bright things is, Glass glow size how far it reaches. Set curvature and corners to 0 for a flat screen (that is all the `flat` presets change). Negative overscan adds a black border, like PC monitors. |
 
-| PC monitor: Monitor size, Dot pitch | Only for 31 kHz modes. Nominal size in inches (the viewable picture is one inch less) and the mask pitch in mm. See [PC monitor](#pc-monitor). |
-| PC monitor: Spot size in dark areas / on white | The beam spot in mm (width at half brightness). 0.30 / 0.45 is a typical 15-inch monitor; lower both for a sharper, higher-end tube. |
-| PC monitor: Spot size in the corners | How much larger the spot is in the corners than in the centre (deflection defocus). 1.4 is typical; dynamic focus kept good monitors below 1.5, cheap ones reached 2. |
+| 15 kHz monitor in mm | Describes the tube in mm for 15 kHz modes too (on in the `amiga-1084s` preset): the parameters below then apply, the monitor shows the whole active line (a 320-pixel Amiga line leaves side borders), and 320×200 / 640×400 are read as an NTSC Amiga instead of VGA. PC monitors (31 kHz) always use mm. |
+| Monitor size, Dot pitch | Nominal size in inches (the viewable picture is one inch less) and the mask pitch in mm. See [PC monitor](#pc-monitor) and [Amiga 1084S](#amiga-1084s). |
+| Spot size in dark areas / on white | The beam spot in mm (width at half brightness). 0.30 / 0.45 is a typical 15-inch PC monitor, 0.28 / 0.65 the 1084S; lower both for a sharper tube. |
+| Spot size in the corners | How much larger the spot is in the corners than in the centre (deflection defocus). 1.4 is typical for a PC monitor (dynamic focus kept good ones below 1.5, cheap ones reached 2); the 1084S had static focus, 1.5. |
 | HDR: paper white, HDR: display peak | Only in the `hdr` presets. Paper white is how bright a full white screen is, display peak the most your display can show. See [HDR](#hdr). |
 
 ### Console timing ids
@@ -122,7 +123,7 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | 9 | Arcade 24 kHz | Medium-res arcade, e.g. Sega Model 2 at 496×384 progressive. |
 
 **Auto** guesses from the frame size: 256 wide → SNES, 320×224 → Mega Drive, 320×240 and other 240-line
-modes → PlayStation, 320×200 or 640×400 → VGA, 256 or 512 lines → Amiga, 336–400 lines → arcade 24 kHz,
+modes → PlayStation, 320×200 or 640×400 → VGA (NTSC Amiga on the 1084S preset), 256 or 512 lines → Amiga, 336–400 lines → arcade 24 kHz,
 more than 300 lines → interlaced, more than 576 lines → upscaled (see Internal resolution). Set the id by hand when the guess is wrong (for example a Mega Drive game
 in 240-line PAL mode).
 
@@ -151,6 +152,19 @@ So 320×200 shows chunky pixels with fine lines that you see up close and in dar
 with 1-pixel dots still visible, and 1024×768 is soft, as it was on a 15-inch tube (set Monitor size to 17 for
 a 17-inch). The dot mask is too fine to show at 1080p, as it was on the real monitor at normal viewing
 distance; at 4K it shows as a fine texture.
+
+## Amiga 1084S
+
+The `amiga-1084s` preset is built from the Commodore 1084S-P1 service manual and photos of a real 1084S:
+
+- 14-inch Philips M34EAQ10X tube, 0.42 mm slot mask, 6.5 MHz video amplifier.
+- White set to "D" (D65, 6500 K), European phosphors (EBU) whatever the Amiga sends, PAL or NTSC.
+- Factory geometry: the whole active picture fills the 13-inch face with a thin black border. A 320-pixel
+  Amiga line takes 45 of the 52 µs, so the picture has black borders on all sides, as on the real monitor.
+  Raise Overscan to fill the screen, like turning up the monitor's width and height.
+- The tube is described in mm (beam spot 0.28 mm on dark, 0.65 mm on white), so NTSC games, with 200 lines
+  further apart, show stronger lines than PAL games with 256, as on the real monitor. The spot was calibrated
+  on a photo of a real monitor: the line contrast inside mid-bright text (39% in the photo) is matched.
 
 ## HDR
 
@@ -194,7 +208,7 @@ The HDR output has been checked numerically (the HDR10 signal decodes back to th
 and confirmed on macOS with the Vulkan driver and a DisplayHDR 400 monitor. Reports from other HDR
 displays are welcome.
 The PC monitor model was checked against its physics (spot width, stripe contrast, line structure and brightness
-agree within 2% in every mode) and against photos of real VGA monitors.
+agree within 2% in every mode) and against photos of real VGA monitors; the 1084S against photos of a real 1084S.
 Reports are welcome.
 
 ## License

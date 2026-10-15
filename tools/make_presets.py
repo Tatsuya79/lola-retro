@@ -86,8 +86,9 @@ BASE = dict(
     LR_SIG_LO=0.2, LR_SIG_HI=0.44, LR_HFOCUS=0.5, LR_GAMMA=2.4, LR_PERSIST=0.08, LR_CONV=0.4,
     LR_MASK_TYPE=2, LR_MASK_STR=0.5, LR_MASK_TRIADS=360, LR_WHITE=8500, LR_PHOS=0,
     LR_CURV_X=0.045, LR_CURV_Y=0.06, LR_CORNER=0.045, LR_GLOW=0.06, LR_GLOW_SIZE=0.5, LR_VIGNETTE=0.3, LR_OVERSCAN=0.05, LR_AMBIENT=0.002,
-    # PC monitor (only for 31 kHz modes): typical mid-90s 15-inch, 0.28 mm dot mask
-    LR_PC_SIZE=15, LR_PC_PITCH=0.28, LR_PC_SPOT_LO=0.30, LR_PC_SPOT_HI=0.45, LR_PC_CORNER=1.4,
+    # Monitor in mm: PC monitors (31 kHz) always use it; a typical mid-90s 15-inch, 0.28 mm dot mask.
+    # LR_MON_MM turns it on for 15 kHz modes (the Amiga 1084S preset).
+    LR_MON_MM=0, LR_MON_SIZE=15, LR_MON_PITCH=0.28, LR_MON_SPOT_LO=0.30, LR_MON_SPOT_HI=0.45, LR_MON_CORNER=1.4,
 )
 
 PRESETS = {
@@ -124,12 +125,17 @@ PRESETS = {
         LR_HFOCUS=0.3, LR_PERSIST=0.03, LR_CONV=0.12, LR_MASK_TYPE=3, LR_MASK_STR=0.45,
         LR_MASK_TRIADS=600, LR_WHITE=9300, LR_CURV_X=0.035, LR_CURV_Y=0.045, LR_GLOW=0.04,
         LR_VIGNETTE=0.15, LR_OVERSCAN=-0.06, LR_AMBIENT=0.002),
-    # Commodore 1084S on RGB: 15 kHz like a TV, sharp, no composite artefacts
+    # Commodore 1084S on RGB, described from its service manual (1084S-P1): 14-inch Philips
+    # M34EAQ10X tube, 0.42 mm slot mask, 6.5 MHz video amplifier, white set to D (6500 K).
+    # Factory geometry: the whole active picture (260 x 186 mm for the test grid) on a
+    # 264 x 198 mm face, so Amiga lores (45 of 52 us) leaves black borders. EBU phosphors.
     "amiga-1084s": dict(
         LR_CABLE=3, LR_SHARP=0.1, LR_SAT=1.12, LR_SIG_LO=0.2, LR_SIG_HI=0.42, LR_HFOCUS=0.45,
-        LR_PERSIST=0.05, LR_CONV=0.25, LR_MASK_TYPE=2, LR_MASK_STR=0.5, LR_MASK_TRIADS=400,
-        LR_WHITE=8000, LR_CURV_X=0.05, LR_CURV_Y=0.06, LR_GLOW=0.06, LR_VIGNETTE=0.25,
-        LR_OVERSCAN=0.02, LR_AMBIENT=0.002),
+        LR_PERSIST=0.05, LR_CONV=0.25, LR_MASK_TYPE=2, LR_MASK_STR=0.5, LR_MASK_TRIADS=470,
+        LR_WHITE=6500, LR_PHOS=3, LR_CURV_X=0.05, LR_CURV_Y=0.06, LR_GLOW=0.06, LR_VIGNETTE=0.25,
+        LR_OVERSCAN=-0.015, LR_AMBIENT=0.002,
+        LR_MON_MM=1, LR_MON_SIZE=14, LR_MON_PITCH=0.42, LR_MON_SPOT_LO=0.28, LR_MON_SPOT_HI=0.65,
+        LR_MON_CORNER=1.5),
 }
 
 
