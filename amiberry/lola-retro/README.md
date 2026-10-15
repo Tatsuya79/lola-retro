@@ -5,6 +5,8 @@ emulator [Amiberry](https://amiberry.com). It is the RetroArch shader converted 
 same picture: the monitor as its service manual describes it, NTSC lines further apart than PAL lines,
 and the whole picture inside a black border, as on the real monitor.
 
+![Cannon Fodder and Super Stardust AGA in Amiberry with the 1084S preset](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/amiberry-1084s.jpg)
+
 ## Install
 
 1. Amiberry 8.3 or newer, the normal OpenGL build (macOS, Linux, Windows).

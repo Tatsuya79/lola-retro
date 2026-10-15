@@ -98,6 +98,11 @@ The Amiga 1084S preset also comes as GLSL for [Amiberry](https://amiberry.com), 
 emulator: copy [`amiberry/lola-retro`](amiberry/lola-retro) into Amiberry's shader folder and choose
 `lola-retro/amiga-1084s.glslp`. Same picture as in RetroArch; setup and settings in its [README](amiberry/lola-retro/README.md).
 
+![Cannon Fodder and Super Stardust AGA in Amiberry with the 1084S preset](docs/amiberry-1084s.jpg)
+
+<sub>Amiberry with the 1084S preset: Cannon Fodder (PAL) and Super Stardust (AGA). The dithering stays visible as a
+fine texture, the lines show in darker areas, and the picture sits in the black border of the real monitor.</sub>
+
 ## Presets
 
 | | |
