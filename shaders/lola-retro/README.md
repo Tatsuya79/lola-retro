@@ -157,8 +157,9 @@ textures that wide (every desktop GPU of the last decade does).
 Rendered in RetroArch 1.18 with the glcore and Vulkan drivers, and reported working with Vulkan and glcore on
 Windows (NVIDIA). Direct3D 10/11/12 failed in 1.0 and 1.1; 1.2 fixes the cause (every pass now samples
 without derivatives, which the Direct3D compiler requires inside loops). Metal has not been confirmed yet.
-The HDR output has been checked numerically (the HDR10 signal decodes back to the intended brightness);
-reports from HDR displays are welcome.
+The HDR output has been checked numerically (the HDR10 signal decodes back to the intended brightness)
+and confirmed on macOS with the Vulkan driver and a DisplayHDR 400 monitor. Reports from other HDR
+displays are welcome.
 Reports are welcome.
 
 ## License
