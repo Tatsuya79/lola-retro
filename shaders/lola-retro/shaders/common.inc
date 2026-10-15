@@ -150,6 +150,8 @@ float autoConsole(vec2 s)
     if (!mon15 && ((w == 320.0 && h == 200.0) || (w == 640.0 && (h == 350.0 || h == 400.0)))) return 7.0;
     if (h == 256.0 || h == 512.0 || (w == 640.0 && h == 200.0)) return 6.0;
     if (mon15 && (h == 200.0 || h == 400.0) && (w == 320.0 || w == 640.0)) return 6.0;
+    // PUAE's default frames: the whole overscan area, 360, 720 or 1440 wide (PAL 287 or 574 rows, NTSC 242 or 484)
+    if ((w == 360.0 || w == 720.0 || w == 1440.0) && (h == 287.0 || h == 574.0 || h == 242.0 || h == 484.0)) return 6.0;
     if (h >= 336.0 && h <= 400.0 && w >= 400.0) return 9.0;
     if (h > 300.0) return 5.0;
     if (w > 420.0) return 4.0;
@@ -205,7 +207,10 @@ struct Timing
     float interlace;   // 1 = 480i/576i source
     float scale;       // internal resolution factor of the core (1 = native)
     float id;          // console timing id (see consoleTable)
+    float hres;        // frame pixels per console pixel (Amiga: 1 lores, 2 hires, 4 superhires)
 };
+
+bool isAmiga(Timing t) { return t.id > 5.5 && t.id < 6.5; }
 
 Timing getTiming(vec2 orig, uint frameCount)
 {
@@ -219,17 +224,26 @@ Timing getTiming(vec2 orig, uint frameCount)
     if (id > 4.5 && id < 5.5 && nat.x > 700.0) a.z = 720.0;   // PS2 720-wide modes keep 13.5 MHz
     t.scan = a.w;
     t.interlace = (t.scan < 0.5 && nat.y > 300.0) ? 1.0 : 0.0;
+    bool amiga = id > 5.5 && id < 6.5;
     if (global.LR_NORM > 1.5) t.pal = 1.0;
     else if (global.LR_NORM > 0.5) t.pal = 0.0;
     else
     {
         float lines = t.interlace > 0.5 ? nat.y * 0.5 : nat.y;
-        t.pal = (t.scan < 0.5 && lines > 240.5) ? 1.0 : 0.0;
+        // an Amiga NTSC frame with its overscan border has up to 243 lines, a PAL one 256 or more
+        t.pal = (t.scan < 0.5 && lines > (amiga ? 249.5 : 240.5)) ? 1.0 : 0.0;
     }
     // full source width: a wider (upscaled) line still takes the same time
-    t.pclk = mix(a.x, a.y, t.pal) * orig.x / a.z;
+    float base = mix(a.x, a.y, t.pal);
+    t.pclk = base * orig.x / a.z;
+    // Amiga: the width tells lores, hires or superhires. Emulators often send the whole
+    // overscan area (PUAE and Amiberry: 720 wide in hires), so a wider frame is a longer
+    // line at the same pixel clock, not faster pixels.
+    float cls = orig.x < 480.0 ? 1.0 : (orig.x < 960.0 ? 2.0 : 4.0);
+    if (amiga) t.pclk = base * (320.0 * cls) / a.z;
     // SVGA modes run faster lines: VESA 75 Hz clocks (800x600 49.5 MHz, 1024x768 78.75 MHz)
     if (t.scan > 0.5 && t.scan < 1.5 && orig.x > 720.0) t.pclk = 78.75 * orig.x * orig.y / (1024.0 * 768.0);
+    t.hres = amiga ? cls : orig.x / a.z;
     t.fsc = t.pal > 0.5 ? 4.433619 : 3.579545;
     t.lineFrac = mix(b.x, b.y, t.pal);
     t.fieldStep = mix(b.z, b.w, t.pal);
@@ -239,6 +253,11 @@ Timing getTiming(vec2 orig, uint frameCount)
     t.vsw = mod(fc * c, 2.0);
     return t;
 }
+
+// Frame pixels and rows per console pixel and line, for effects sized on the glass (glow,
+// misconvergence). Only the Amiga needs it: its emulators send hires frames (2 pixels per lores
+// pixel) and draw every line twice or weave two fields. Other consoles keep (1, 1).
+vec2 consoleUnit(Timing t) { return isAmiga(t) ? vec2(t.hres, t.interlace > 0.5 ? 2.0 : 1.0) : vec2(1.0); }
 
 // y is a source row; rows of one upscaled block belong to the same native line
 float nativeLine(float y, Timing t) { return floor(y / t.scale); }

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Compile-check every .slang pass with glslangValidator.
+"""Compile-check every .slang pass with glslangValidator, and the generated GLSL ports.
 
-It preprocesses the files the way RetroArch does: expands #include, drops the
+The .slang files are preprocessed the way RetroArch does: expands #include, drops the
 #pragma parameter/name/format lines, and splits the vertex and fragment stages.
+The .glsl files (tools/make_glsl.py) are compiled the way Amiberry does: once with
+"#define VERTEX" and once with "#define FRAGMENT" right after the #version line.
 
 Usage: python3 tools/check_shaders.py
 Needs glslangValidator (package glslang-tools / glslang).
@@ -13,7 +15,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-SHADERS = Path(__file__).resolve().parent.parent / "shaders" / "lola-retro" / "shaders"
+ROOT = Path(__file__).resolve().parent.parent
+SHADERS = ROOT / "shaders" / "lola-retro" / "shaders"
+GLSL = sorted((ROOT / "amiberry").glob("**/*.glsl"))
 
 
 def expand(path, seen=None):
@@ -46,21 +50,29 @@ def split_stages(lines):
     return {k: ["#version 450"] + common + v for k, v in stages.items()}
 
 
+def compile_stage(name, stage, text, args):
+    ext = "vert" if stage == "vertex" else "frag"
+    with tempfile.NamedTemporaryFile("w", suffix="." + ext, delete=False) as f:
+        f.write(text)
+        tmp = f.name
+    r = subprocess.run(["glslangValidator", *args, tmp], capture_output=True, text=True)
+    print(f"{name:18} {stage:8} {'ok' if r.returncode == 0 else 'FAILED'}")
+    if r.returncode != 0:
+        print(r.stdout + r.stderr)
+    return r.returncode == 0
+
+
 def main():
     ok = True
     for slang in sorted(SHADERS.glob("*.slang")):
-        stages = split_stages(expand(slang))
-        for stage, src in stages.items():
-            ext = "vert" if stage == "vertex" else "frag"
-            with tempfile.NamedTemporaryFile("w", suffix="." + ext, delete=False) as f:
-                f.write("\n".join(src) + "\n")
-                tmp = f.name
-            r = subprocess.run(["glslangValidator", "-V", "-o", "/dev/null", tmp], capture_output=True, text=True)
-            status = "ok" if r.returncode == 0 else "FAILED"
-            print(f"{slang.name:14} {stage:8} {status}")
-            if r.returncode != 0:
-                ok = False
-                print(r.stdout + r.stderr)
+        for stage, src in split_stages(expand(slang)).items():
+            ok &= compile_stage(slang.name, stage, "\n".join(src) + "\n", ["-V", "-o", "/dev/null"])
+    for glsl in GLSL:
+        src = glsl.read_text()
+        cut = src.index("\n") + 1                      # after the #version line
+        for stage, define in (("vertex", "VERTEX"), ("fragment", "FRAGMENT")):
+            text = src[:cut] + f"#define {define}\n#define PARAMETER_UNIFORM\n" + src[cut:]
+            ok &= compile_stage(glsl.name, stage, text, [])
     sys.exit(0 if ok else 1)
 
 

@@ -7,15 +7,18 @@
 layout(location = 0) in vec4 Position;
 layout(location = 1) in vec2 TexCoord;
 layout(location = 0) out vec2 vTexCoord;
+layout(location = 1) flat out float vUnit;    // frame rows per console line (Amiga doubled or interlaced: 2)
 
 void main()
 {
     gl_Position = global.MVP * Position;
     vTexCoord = TexCoord;
+    vUnit = consoleUnit(getTiming(params.OriginalSize.xy, params.FrameCount)).y;
 }
 
 #pragma stage fragment
 layout(location = 0) in vec2 vTexCoord;
+layout(location = 1) flat in float vUnit;
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 2) uniform sampler2D Source;
 
@@ -26,7 +29,7 @@ void main()
     for (int k = -6; k <= 6; k++)
     {
         float w = exp(-0.5 * float(k * k) / 9.0);
-        acc += w * textureLod(Source, vTexCoord + vec2(0.0, float(k) * params.SourceSize.w * global.LR_GLOW_SIZE), 0.0).rgb;
+        acc += w * textureLod(Source, vTexCoord + vec2(0.0, float(k) * params.SourceSize.w * global.LR_GLOW_SIZE * vUnit), 0.0).rgb;
         ws += w;
     }
     FragColor = vec4(acc / ws, 1.0);

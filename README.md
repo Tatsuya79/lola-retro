@@ -92,6 +92,12 @@ real monitor. The beam was calibrated on a photo of a real 1084S.
 
 ![The same text on the 1084S in PAL and NTSC](docs/amiga-1084s-pal-ntsc.jpg)
 
+## Amiberry
+
+The Amiga 1084S preset also comes as GLSL for [Amiberry](https://amiberry.com), the stand-alone Amiga
+emulator: copy [`amiberry/lola-retro`](amiberry/lola-retro) into Amiberry's shader folder and choose
+`lola-retro/amiga-1084s.glslp`. Same picture as in RetroArch; setup and settings in its [README](amiberry/lola-retro/README.md).
+
 ## Presets
 
 | | |
@@ -171,8 +177,9 @@ Measured on synthetic patterns:
 | Folder | Contents |
 |---|---|
 | `shaders/lola-retro/` | The RetroArch shader pack (slang): 8 presets, each in a `curved/` and a `flat/` version, plus the same for HDR displays in `hdr/`. Details in its [README](shaders/lola-retro/README.md). |
+| `amiberry/lola-retro/` | The Amiga 1084S preset converted to GLSL for Amiberry. Details in its [README](amiberry/lola-retro/README.md). |
 | `web/lola-retro.html` | The original WebGL version. Open it in a browser, try test scenes or drop in your own screenshots. |
-| `tools/` | Preset generator, compile checker and a headless preview renderer. |
+| `tools/` | Preset generator, GLSL converter, compile checker and headless preview renderers. |
 | `test-images/` | Native-resolution test frames used for the previews. |
 | `docs/` | Screenshots used in this README. |
 
@@ -180,8 +187,10 @@ Measured on synthetic patterns:
 
 ```
 python3 tools/make_presets.py     # regenerate the curved/ and flat/ .slangp files from one table
-python3 tools/check_shaders.py    # compile every pass with glslangValidator
+python3 tools/make_glsl.py        # regenerate the Amiberry version (amiberry/) from the slang passes
+python3 tools/check_shaders.py    # compile every pass (slang and GLSL) with glslangValidator
 tools/render-preview.sh PRESET IMAGE OUT.png [glcore|vulkan]   # Linux: render a frame in headless RetroArch
+tools/amiberry-preview.py PRESET.glslp FRAME.png OUT.png       # render a frame the way Amiberry does (moderngl)
 ```
 
 ## License

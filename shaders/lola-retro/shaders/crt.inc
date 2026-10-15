@@ -5,6 +5,11 @@
 // - Interlaced sources alternate fields; VGA 200-line modes are scanned twice.
 // - Mask: aperture grille (with damper wires), slot mask, shadow mask or a projection screen.
 // - Glass: curvature, halation, white point, vignette, room reflection, phosphor afterglow.
+// Options for the GLSL port (tools/make_glsl.py), off in RetroArch:
+//   LR_FIELDS       an Amiga frame with every line drawn twice is one line per row pair
+//                   (the fields passes find out), not an interlaced frame
+//   LR_NO_FEEDBACK  no afterglow (the emulator has no feedback textures)
+//   LR_FIT_43       the tube stays 4:3 whatever shape the picture area has
 
 #include "common.inc"
 
@@ -16,6 +21,9 @@ layout(location = 1) flat out vec3 vWhite;
 layout(location = 2) flat out vec4 vTiming;   // scan mode, PAL, interlaced, internal resolution
 layout(location = 3) flat out float vPhos;    // phosphor set
 layout(location = 4) flat out float vShare;   // share of the active line the source covers
+#ifdef LR_FIELDS
+layout(location = 5) flat out float vAmiga;
+#endif
 
 // Blackbody colour of the TV's white, relative to D65
 vec3 kelvinRGB(float T)
@@ -38,6 +46,9 @@ void main()
     vTiming = vec4(T.scan, T.pal, T.interlace, T.scale);
     vPhos = phosphorSet(T);
     vShare = activeShare(T, params.OriginalSize.xy);
+#ifdef LR_FIELDS
+    vAmiga = isAmiga(T) ? 1.0 : 0.0;
+#endif
     // the white is set on the phosphor drives so that it ends up at the chosen colour temperature
     if (vPhos > 1.5) vWhite = inverse(phosphorMatrix(vPhos)) * vWhite;
 }
@@ -48,10 +59,18 @@ layout(location = 1) flat in vec3 vWhite;
 layout(location = 2) flat in vec4 vTiming;
 layout(location = 3) flat in float vPhos;
 layout(location = 4) flat in float vShare;
+#ifdef LR_FIELDS
+layout(location = 5) flat in float vAmiga;
+#endif
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 2) uniform sampler2D LR_Beam;
 layout(set = 0, binding = 3) uniform sampler2D LR_Glow;
+#ifndef LR_NO_FEEDBACK
 layout(set = 0, binding = 4) uniform sampler2D LR_CRTFeedback;
+#endif
+#ifdef LR_FIELDS
+layout(set = 0, binding = 5) uniform sampler2D LR_Fields;
+#endif
 
 // Beam of source line i at position x along the line (from the beam pass):
 // rgb = square root of its linear brightness, a = which spot made it (PC monitor);
@@ -125,12 +144,22 @@ void main()
     float scan = vTiming.x, pal = vTiming.y, interlace = vTiming.z;
 
     // tube geometry: barrel curvature and rounded corners
-    vec2 c = vTexCoord * 2.0 - 1.0;
+    vec2 tc = vTexCoord;
+    vec2 tubePx = params.OutputSize.xy;                   // size of the tube face in screen pixels
+    float px = 2.0 * params.OutputSize.z;
+#ifdef LR_FIT_43
+    // the picture area may be any shape: the 4:3 tube sits in its middle
+    float va = params.OutputSize.x * params.OutputSize.w;
+    vec2 fit = va > 4.0 / 3.0 ? vec2(4.0 / 3.0 / va, 1.0) : vec2(1.0, 0.75 * va);
+    tc = (tc - 0.5) / fit + 0.5;
+    tubePx *= fit;
+    px /= fit.x;
+#endif
+    vec2 c = tc * 2.0 - 1.0;
     c *= 1.0 + vec2(global.LR_CURV_X, global.LR_CURV_Y) * (c.yx * c.yx);
     float corner = global.LR_CORNER;
     vec2 qq = abs(c) - 1.0 + corner;
     float dist = length(max(qq, 0.0)) + min(max(qq.x, qq.y), 0.0) - corner;
-    float px = 2.0 * params.OutputSize.z;
     float inside = 1.0 - smoothstep(-px, px, dist);
 
     vec3 col = vec3(0.0);
@@ -139,6 +168,23 @@ void main()
         vec2 ut = c * 0.5 + 0.5;
         vec2 ua = (ut - 0.5) * (1.0 - global.LR_OVERSCAN) + 0.5;
         float srcH = params.OriginalSize.y / vTiming.w;   // native lines
+        float rpl = 1.0, ph = 0.0;                         // beam rows per line, row of line 0
+#ifdef LR_FIELDS
+        // Amiga emulators draw every line twice (720x568 for a 256-line game) and weave the
+        // two fields of an interlaced screen into the same rows. Identical row pairs are one
+        // line: the gaps between lines stay, as on the real monitor. (0.5/255: 8-bit frames.)
+        if (interlace > 0.5 && vAmiga > 0.5)
+        {
+            vec2 fd = texelFetch(LR_Fields, ivec2(0, 0), 0).rg;   // largest pair difference, both pairings
+            if (min(fd.x, fd.y) < 0.5 / 255.0)
+            {
+                interlace = 0.0;
+                rpl = 2.0;
+                ph = fd.x < 0.5 / 255.0 ? 0.0 : 1.0;
+                srcH = floor((srcH - ph) * 0.5);
+            }
+        }
+#endif
 
         // raster: TV modes sit in a 240/288-line field, VGA and 24 kHz arcade fill the screen
         bool vga = scan > 0.5 && scan < 1.5;
@@ -175,7 +221,7 @@ void main()
         {
             float j = j0 + float(k);
             float i = j * stepL + offL;
-            vec4 bb = beamAt(floor(i / dbl), xs, srcH);
+            vec4 bb = beamAt(floor(i / dbl) * rpl + ph, xs, srcH * rpl + ph);
             vec3 b = bb.rgb;
             vec3 lc = b * b;                                      // linear brightness
             // beam height: TV from the local brightness per gun; PC from the spot that made the light
@@ -190,11 +236,11 @@ void main()
         float triads = global.LR_MASK_TRIADS;
         // tube in mm: from the mask pitch (a dot mask's pitch is diagonal, 0.866 of it horizontal)
         if (mm) triads = monTubeMM().y / (global.LR_MON_PITCH * (mt > 2.5 && mt < 3.5 ? 0.866 : 1.0));
-        float pitchPx = params.OutputSize.y / triads;
+        float pitchPx = tubePx.y / triads;
         float str = global.LR_MASK_STR * smoothstep(1.6, 2.6, pitchPx);
         if (mt > 0.5 && str > 0.0)
         {
-            vec2 mp = ut * params.OutputSize.xy / pitchPx;
+            vec2 mp = ut * tubePx / pitchPx;
             float dp = 0.25 / pitchPx;
             vec3 m = maskAvg(mp - dp, mp + dp, mt);
             float avg = mt < 1.5 ? 0.367 : (mt < 2.5 ? 0.31 : (mt < 3.5 ? 0.19 : 0.84));
@@ -203,7 +249,7 @@ void main()
         if (mt > 0.5 && mt < 1.5)
         {
             // aperture grille: the two horizontal damper wires
-            float hp = params.OutputSize.y;
+            float hp = tubePx.y;
             float sw = max(0.45, hp / 4000.0);
             float d1 = (ut.y - 1.0 / 3.0) * hp, d2 = (ut.y - 2.0 / 3.0) * hp;
             col *= 1.0 - 0.2 * (exp(-0.5 * d1 * d1 / (sw * sw)) + exp(-0.5 * d2 * d2 / (sw * sw)));
@@ -234,7 +280,9 @@ void main()
         col *= inside;
     }
 
+#ifndef LR_NO_FEEDBACK
     vec3 prev = textureLod(LR_CRTFeedback, vTexCoord, 0.0).rgb;
     col = max(col, prev * global.LR_PERSIST);
+#endif
     FragColor = vec4(col, 1.0);
 }

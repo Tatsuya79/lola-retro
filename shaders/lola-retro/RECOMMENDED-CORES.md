@@ -62,7 +62,7 @@ and the picture is stable. Turn it off to see the fields alternate like on a rea
 | System | Core | Preset | Console timing | Settings |
 |---|---|---|---|---|
 | DOS, Windows 9x | DOSBox Pure | PC Monitor (VGA) | 7 (set by the preset) | Every PC mode on one 15-inch monitor: 320×200 is drawn with VGA line doubling (400 lines), 640×480 up to 1024×768 on the same tube. |
-| Amiga | PUAE | Amiga 1084S | auto (6) | Use a low-resolution (320-wide) or high-resolution (640-wide) mode without extra borders, so the frame is 320×256 / 640×512 (PAL) or 320×200 / 640×400 (NTSC). Otherwise set timing 6 by hand. The preset shows the whole picture with a black border, like the real monitor; raise Overscan to fill the screen. |
+| Amiga | PUAE | Amiga 1084S | auto (6) | PUAE's default output is recognised (720 wide with the overscan border, which shows like on the real monitor), and so are 320×256 / 640×512 (PAL) and 320×200 / 640×400 (NTSC) without border. With other crop settings, set timing 6 by hand. Keep **Line Mode** at Automatic: forced double lines would be read as an interlaced screen. The preset shows the whole picture with a black border, like the real monitor; raise Overscan to fill the screen. For Amiberry there is a GLSL version of this preset (`amiberry/` in the repository). |
 
 ## Not covered
 

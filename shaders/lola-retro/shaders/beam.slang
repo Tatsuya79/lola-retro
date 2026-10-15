@@ -14,6 +14,7 @@ layout(location = 0) out vec2 vTexCoord;
 layout(location = 1) flat out float vScale;
 layout(location = 2) flat out float vScan;
 layout(location = 3) flat out vec2 vShare;   // share of the scan the source covers (x: active line, y: lines)
+layout(location = 4) flat out float vConvW;  // 320 x frame pixels per pixel of a 320-wide mode (misconvergence unit)
 
 void main()
 {
@@ -25,6 +26,7 @@ void main()
     float vis = (T.pal > 0.5 ? 288.0 : 240.0) * (T.interlace > 0.5 ? 2.0 : 1.0);
     vShare = vec2(activeShare(T, params.OriginalSize.xy),
                   T.scan < 0.5 ? min(params.OriginalSize.y / T.scale / vis, 1.0) : 1.0);
+    vConvW = isAmiga(T) ? 320.0 * T.hres : params.OriginalSize.x;
 }
 
 #pragma stage fragment
@@ -32,6 +34,7 @@ layout(location = 0) in vec2 vTexCoord;
 layout(location = 1) flat in float vScale;
 layout(location = 2) flat in float vScan;
 layout(location = 3) flat in vec2 vShare;
+layout(location = 4) flat in float vConvW;
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 3) uniform sampler2D LR_Decoded;
 
@@ -129,7 +132,7 @@ void main()
     }
 
     // misconvergence: red and blue land a fraction of a pixel off green, more toward the edges
-    float conv = clamp(global.LR_CONV * (0.35 + 0.65 * cx * abs(cx)) * params.OriginalSize.x / 320.0, -1.0, 1.0);
+    float conv = clamp(global.LR_CONV * (0.35 + 0.65 * cx * abs(cx)) * vConvW / 320.0, -1.0, 1.0);
     float sh = conv * params.OriginalSize.z;
     acc.r -= dacc.r * sh;
     acc.b += dacc.b * sh;

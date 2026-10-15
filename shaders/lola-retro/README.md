@@ -117,13 +117,14 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | 3 | Mega Drive H32 (256 wide) | Same rhythm as H40 at a slower pixel clock. |
 | 4 | PlayStation | 227½ cycles: the pattern flips every line and every field, so a comb filter can remove it. |
 | 5 | PlayStation 2 | 480i at 13.5 MHz. |
-| 6 | Amiga | 320×256 PAL / 320×200 NTSC, 640-wide hi-res. |
+| 6 | Amiga | 320×256 PAL / 320×200 NTSC. The width tells lores, hires and superhires apart, and a frame that includes the overscan border (PUAE's default, 720 wide) keeps the right picture size. |
 | 7 | PC VGA | 31 kHz; 200-line modes are drawn twice (400 lines). |
 | 8 | Arcade 15 kHz | Generic 15 kHz RGB. |
 | 9 | Arcade 24 kHz | Medium-res arcade, e.g. Sega Model 2 at 496×384 progressive. |
 
 **Auto** guesses from the frame size: 256 wide → SNES, 320×224 → Mega Drive, 320×240 and other 240-line
-modes → PlayStation, 320×200 or 640×400 → VGA (NTSC Amiga on the 1084S preset), 256 or 512 lines → Amiga, 336–400 lines → arcade 24 kHz,
+modes → PlayStation, 320×200 or 640×400 → VGA (NTSC Amiga on the 1084S preset), 256 or 512 lines and PUAE's default
+frames (360, 720 or 1440 wide with 287, 574, 242 or 484 lines) → Amiga, 336–400 lines → arcade 24 kHz,
 more than 300 lines → interlaced, more than 576 lines → upscaled (see Internal resolution). Set the id by hand when the guess is wrong (for example a Mega Drive game
 in 240-line PAL mode).
 
@@ -165,6 +166,10 @@ The `amiga-1084s` preset is built from the Commodore 1084S-P1 service manual and
 - The tube is described in mm (beam spot 0.28 mm on dark, 0.65 mm on white), so NTSC games, with 200 lines
   further apart, show stronger lines than PAL games with 256, as on the real monitor. The spot was calibrated
   on a photo of a real monitor: the line contrast inside mid-bright text (39% in the photo) is matched.
+- Frames with the overscan border (PUAE's default, 720×287) show that border at its real size around the
+  picture. Glow and misconvergence are measured in lores pixels, so hires and lores frames look the same.
+
+For the stand-alone emulator Amiberry, the repository has this preset converted to GLSL (`amiberry/`).
 
 ## HDR
 

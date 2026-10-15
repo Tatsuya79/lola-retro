@@ -9,23 +9,27 @@ layout(location = 0) in vec4 Position;
 layout(location = 1) in vec2 TexCoord;
 layout(location = 0) out vec2 vTexCoord;
 layout(location = 1) flat out float vScale;
+layout(location = 2) flat out float vUnit;    // frame pixels per console pixel (Amiga hires: 2)
 
 void main()
 {
     gl_Position = global.MVP * Position;
     vTexCoord = TexCoord;
-    vScale = getTiming(params.OriginalSize.xy, params.FrameCount).scale;
+    Timing T = getTiming(params.OriginalSize.xy, params.FrameCount);
+    vScale = T.scale;
+    vUnit = consoleUnit(T).x;
 }
 
 #pragma stage fragment
 layout(location = 0) in vec2 vTexCoord;
 layout(location = 1) flat in float vScale;
+layout(location = 2) flat in float vUnit;
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 2) uniform sampler2D Source;
 
 void main()
 {
-    float dx = params.OutputSize.z * global.LR_GLOW_SIZE;   // tap spacing sets the radius
+    float dx = params.OutputSize.z * global.LR_GLOW_SIZE * vUnit;   // tap spacing sets the radius
     vec2 tc = vTexCoord;
     if (vScale > 1.5)
     {
