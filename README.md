@@ -22,6 +22,9 @@ little rainbow, just as it did on a living-room TV. On RGB you see the stripes t
 | [![Lola Retro on YouTube](https://img.youtube.com/vi/7losgxx2cp0/mqdefault.jpg)](https://www.youtube.com/watch?v=7losgxx2cp0) | **[Lola Retro in action](https://www.youtube.com/watch?v=7losgxx2cp0)**<br>An older version. The current one has a more realistic, more modest rainbow. |
 | [![Super Turrican](https://img.youtube.com/vi/xdj4simbOp4/mqdefault.jpg)](https://www.youtube.com/watch?v=xdj4simbOp4) | **[Super Turrican on SNES](https://www.youtube.com/watch?v=xdj4simbOp4)** |
 | [![Earthworm Jim](https://img.youtube.com/vi/Cz7tewURyZg/mqdefault.jpg)](https://www.youtube.com/watch?v=Cz7tewURyZg) | **[Earthworm Jim on SNES](https://www.youtube.com/watch?v=Cz7tewURyZg)** |
+| [![Sonic the Hedgehog](https://img.youtube.com/vi/z7zlLLQVhZQ/mqdefault.jpg)](https://www.youtube.com/watch?v=z7zlLLQVhZQ) | **[Sonic the Hedgehog on Mega Drive: RGB vs composite](https://www.youtube.com/watch?v=z7zlLLQVhZQ)**<br>The waterfall: stripes on RGB, blended and translucent on composite. |
+| [![Cannon Fodder](https://img.youtube.com/vi/lyLQ_6vd3tI/mqdefault.jpg)](https://www.youtube.com/watch?v=lyLQ_6vd3tI) | **[Cannon Fodder in Amiberry](https://www.youtube.com/watch?v=lyLQ_6vd3tI)**<br>Amiga 1084S preset in Amiberry. |
+| [![Super Stardust](https://img.youtube.com/vi/DgMnenye7sw/mqdefault.jpg)](https://www.youtube.com/watch?v=DgMnenye7sw) | **[Super Stardust (AGA) in Amiberry](https://www.youtube.com/watch?v=DgMnenye7sw)**<br>Amiga 1084S preset in Amiberry. |
 
 ## Quick start
 
