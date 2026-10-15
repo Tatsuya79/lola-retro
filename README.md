@@ -12,7 +12,7 @@ Named after Lola, my retriever. Retro because it is retro.
 
 [![Lola Retro on YouTube](https://img.youtube.com/vi/7losgxx2cp0/maxresdefault.jpg)](https://www.youtube.com/watch?v=7losgxx2cp0)
 
-*Video: [Lola Retro in action](https://www.youtube.com/watch?v=7losgxx2cp0)*
+*Video: [Lola Retro in action(note, old video - new version has more realistic, modest rainbow effect)](https://www.youtube.com/watch?v=7losgxx2cp0)*
 
 
 Super Turrican on SNES
