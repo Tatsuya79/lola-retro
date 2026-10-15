@@ -42,7 +42,8 @@ vec3 pq(vec3 nits)
 
 void main()
 {
-    vec3 c = max(textureLod(Source, vTexCoord, 0.0).rgb, 0.0);   // linear, 1.0 = paper white
+    vec3 c = textureLod(Source, vTexCoord, 0.0).rgb;   // linear Rec.709, 1.0 = paper white;
+                                                      // phosphor colours outside Rec.709 stay in Rec.2020
     vec3 nits = max(k709to2020 * c, 0.0) * global.LR_NITS_WHITE;
     vec3 e = pq(nits);
     vec2 fc = vTexCoord * params.OutputSize.xy;

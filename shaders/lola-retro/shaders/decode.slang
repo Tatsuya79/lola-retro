@@ -215,6 +215,6 @@ void main()
 
     uv *= global.LR_SAT * global.LR_CONTRAST;
     Y = Y * global.LR_CONTRAST + global.LR_BRIGHT;
-    vec3 rgb = vec3(Y + 1.13983 * uv.y, Y - 0.39465 * uv.x - 0.58060 * uv.y, Y + 2.03211 * uv.x);
+    vec3 rgb = decodeRGB(Y, uv, decoderType(T, cable));
     FragColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
 }

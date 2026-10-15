@@ -24,6 +24,7 @@ layout(push_constant) uniform Push
 #pragma parameter LR_SHARP "Sharpness" 0.35 0.0 1.0 0.01
 #pragma parameter LR_SAT "Colour" 1.25 0.0 2.0 0.01
 #pragma parameter LR_TINT "Tint (NTSC, degrees)" 0.0 -30.0 30.0 1.0
+#pragma parameter LR_DEMOD "Colour decoder (0 auto, 1 standard, 2 US TV, 3 Japanese TV)" 0.0 0.0 3.0 1.0
 #pragma parameter LR_BRIGHT "Brightness" 0.0 -0.12 0.12 0.005
 #pragma parameter LR_CONTRAST "Contrast" 1.05 0.6 1.4 0.01
 #pragma parameter LR_NOISE "RF noise" 0.0 0.0 0.3 0.005
@@ -40,6 +41,7 @@ layout(push_constant) uniform Push
 #pragma parameter LR_MASK_STR "Mask strength" 0.5 0.0 1.0 0.01
 #pragma parameter LR_MASK_TRIADS "Mask triads per screen height" 360.0 150.0 900.0 10.0
 #pragma parameter LR_WHITE "White point (K)" 8500.0 6500.0 9300.0 100.0
+#pragma parameter LR_PHOS "Phosphors (0 auto, 1 sRGB, 2 SMPTE-C, 3 EBU, 4 Japanese P22)" 0.0 0.0 4.0 1.0
 #pragma parameter LR_HDR_GLASS "--- Glass ---" 0.0 0.0 0.0 1.0
 #pragma parameter LR_CURV_X "Curvature horizontal" 0.045 0.0 0.15 0.005
 #pragma parameter LR_CURV_Y "Curvature vertical" 0.06 0.0 0.15 0.005
@@ -64,6 +66,7 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_SHARP;
     float LR_SAT;
     float LR_TINT;
+    float LR_DEMOD;
     float LR_BRIGHT;
     float LR_CONTRAST;
     float LR_NOISE;
@@ -80,6 +83,7 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_MASK_STR;
     float LR_MASK_TRIADS;
     float LR_WHITE;
+    float LR_PHOS;
     float LR_HDR_GLASS;
     float LR_CURV_X;
     float LR_CURV_Y;
@@ -184,6 +188,7 @@ struct Timing
     float scan;        // 0 TV raster, 1 VGA line doubling, 2 fill (24 kHz arcade)
     float interlace;   // 1 = 480i/576i source
     float scale;       // internal resolution factor of the core (1 = native)
+    float id;          // console timing id (see consoleTable)
 };
 
 Timing getTiming(vec2 orig, uint frameCount)
@@ -194,6 +199,7 @@ Timing getTiming(vec2 orig, uint frameCount)
     float id = global.LR_CONSOLE < 0.5 ? autoConsole(nat) : global.LR_CONSOLE;
     vec4 a; vec4 b; float c;
     consoleTable(id, a, b, c);
+    t.id = id;
     if (id > 4.5 && id < 5.5 && nat.x > 700.0) a.z = 720.0;   // PS2 720-wide modes keep 13.5 MHz
     t.scan = a.w;
     t.interlace = (t.scan < 0.5 && nat.y > 300.0) ? 1.0 : 0.0;
@@ -234,4 +240,52 @@ float vSign(float y, Timing t)
     if (t.pal < 0.5) return 1.0;
     float pl = physLine(y, t) + t.vsw + (oddField(y, t) ? 1.0 : 0.0);
     return mod(pl, 2.0) < 0.5 ? 1.0 : -1.0;
+}
+
+// ---------------------------------------------------------------------------
+// Colour of the TV: its chroma decoder and its phosphors
+// ---------------------------------------------------------------------------
+
+// Chroma decoder: 1 = by the standard. American and Japanese TVs demodulated R-Y and G-Y
+// on shifted axes with their own gains ("red push", warmer skin tones). PAL TVs, broadcast
+// monitors and RGB inputs use the standard axes.
+float decoderType(Timing t, float cable)
+{
+    if (global.LR_DEMOD > 0.5) return global.LR_DEMOD;
+    return (t.pal < 0.5 && cable < 2.5) ? 2.0 : 1.0;
+}
+
+// R, G, B from Y and the demodulated U, V (U = 0.492 (B-Y), V = 0.877 (R-Y)).
+// Consumer axes and gains from the Sony CXA2025AS datasheet, relative to B-Y:
+// US mode R-Y 112 deg x0.83, G-Y 252 deg x0.30; Japanese mode R-Y 95 deg x0.78, G-Y 240 deg x0.30.
+vec3 decodeRGB(float Y, vec2 uv, float dec)
+{
+    if (dec < 1.5)
+        return vec3(Y + 1.13983 * uv.y, Y - 0.39465 * uv.x - 0.58060 * uv.y, Y + 2.03211 * uv.x);
+    bool us = dec < 2.5;
+    float ar = radians(us ? 112.0 : 95.0), gr = us ? 0.83 : 0.78;
+    float ag = radians(us ? 252.0 : 240.0), gg = 0.30;
+    float ry = (uv.x * cos(ar) + uv.y * sin(ar)) * gr / 0.492;
+    float gy = (uv.x * cos(ag) + uv.y * sin(ag)) * gg / 0.492;
+    return vec3(Y + ry, Y + gy, Y + uv.x / 0.492);
+}
+
+// Phosphors: 1 sRGB / Rec.709, 2 SMPTE-C (NTSC sets), 3 EBU (PAL sets, broadcast monitors),
+// 4 Japanese P22 (Sony Trinitron and Japanese sets, arcade monitors).
+float phosphorSet(Timing t)
+{
+    if (global.LR_PHOS > 0.5) return global.LR_PHOS;
+    if (t.scan > 0.5 && t.scan < 1.5) return 1.0;   // PC monitors: sRGB was defined from them
+    if (t.id > 7.5) return 4.0;                       // arcade monitors
+    return t.pal > 0.5 ? 3.0 : 2.0;
+}
+
+// Linear phosphor RGB -> linear Rec.709 RGB, white (D65) kept. Primaries (x, y):
+// SMPTE-C R .630 .340 G .310 .595 B .155 .070; EBU R .640 .330 G .290 .600 B .150 .060;
+// Japanese P22 R .625 .350 G .280 .605 B .152 .062 (Sony KV-20M20 and others, via Dogway's grade).
+mat3 phosphorMatrix(float p)
+{
+    if (p < 2.5) return mat3(0.939542, 0.017772, -0.001622, 0.050181, 0.965793, -0.004370, 0.010277, 0.016435, 1.005991);
+    if (p < 3.5) return mat3(1.044043, 0.0, 0.0, -0.044043, 1.0, 0.011793, 0.0, 0.0, 0.988207);
+    return mat3(1.081942, 0.038032, -0.007481, -0.088427, 0.959991, 0.015170, 0.006485, 0.001977, 0.992311);
 }

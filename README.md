@@ -65,6 +65,16 @@ it is modern processing, like the notch filter of the RetroTINK 4K Pro.
 
 ![Dither blend off and on, with composite for comparison](docs/dither-blend-sonic.jpg)
 
+## Colour like the TV you had
+
+An American TV did not decode colour by the book. Its decoder shifted the colour axes and added red gain
+("red push") for warmer skin tones, so yellows leaned orange and reds were stronger, and its phosphors were
+not today's sRGB colours either. The presets follow the signal: NTSC games get a US TV decoder (Sony CXA2025AS)
+and SMPTE-C phosphors, PAL games a standard decoder and EBU phosphors. In this frame the lavender sky turns blue
+and the bricks turn orange-red through the US TV decoder.
+
+![Standard decoder and US TV decoder](docs/tv-colour-us-vs-pal.jpg)
+
 ## Presets
 
 | | |
@@ -87,6 +97,8 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
 - **Electron beam.** Each line is a spot whose width grows with brightness, in both directions and per colour gun.
   Bright detail merges and rounds off, dark detail stays sharp. Interlaced fields alternate; VGA 200-line modes are drawn twice.
 - **Phosphor mask.** Aperture grille (with Trinitron damper wires), slot mask, shadow mask, or a projection screen.
+- **Colour of the TV.** US and Japanese TVs demodulate with "red push" (axes and gains from the Sony CXA2025AS
+  datasheet), PAL TVs by the standard; phosphors are SMPTE-C, EBU or Japanese P22 instead of sRGB.
 - **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow.
 - **Internal resolution.** PS1 and PS2 cores running at 2× and up are read as blocks of one console pixel,
   so the signal stays right and the extra detail only makes edges smoother.

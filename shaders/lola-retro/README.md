@@ -81,12 +81,13 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu ‚
 | Parameter | Meaning |
 |---|---|
 | Console timing | Pixel clock and colour-subcarrier rhythm of the console. 0 = auto (see below). |
-| TV standard | 0 auto (by line count), 1 NTSC, 2 PAL. |
+| TV standard | 0 auto (by line count), 1 NTSC, 2 PAL. Set it by hand for PAL consoles in 60 Hz mode (PAL60, common on PS2 and Dreamcast): the line count says NTSC but the colour is PAL. It also switches the colour decoder and the phosphors. |
 | Cable | 0 RF, 1 Composite, 2 S-Video, 3 RGB. |
 | Comb filter | Better TVs separated colour with a comb filter. Only works when the console flips the subcarrier phase every line (PlayStation, Amiga). |
 | Luma trap in the console | How much of the fine luma detail the console's encoder filtered out before mixing in colour. Lower it for a stronger rainbow on fine stripes (Sonic's waterfall), raise it for a cleaner picture. Real consoles differed a lot here: 0 is like an early Mega Drive Model 1 (strong rainbow), 0.75 (default) a typical console, 1 a later model with a better encoder. |
 | Dither blend on RGB and S-Video | Off by default. Modern processing, not something a real TV did (similar to the notch filter of the RetroTINK 4K Pro): 1-pixel dither stripes blend into the colour or transparency the artists meant, without composite's rainbow and blur. Lines one pixel thin get slightly softer. |
 | Sharpness, Colour, Tint, Brightness, Contrast | The TV's own knobs. Tint only exists on NTSC sets. |
+| Colour decoder | 0 auto, 1 standard, 2 US TV, 3 Japanese TV. American and Japanese TVs decoded colour on shifted axes with extra red gain ("red push"): yellows lean orange, reds are stronger, skin looks warmer. Auto uses the US TV decoder (Sony CXA2025AS) for NTSC on composite, RF and S-Video, and the standard one for PAL and RGB. |
 | RF noise | Snow on the antenna input. |
 | No flicker | On by default. Freezes dot crawl and draws both interlaced fields every frame. Turn it off for the real moving dot crawl and 480i field flicker. |
 | Beam width in dark areas / on white | The beam spot grows with brightness, in both directions: bright lines merge and bright detail rounds off, dark lines show gaps and dark detail stays sharp. |
@@ -97,6 +98,7 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu ‚
 | Mask | 0 none, 1 aperture grille, 2 slot mask, 3 shadow mask, 4 projection screen. |
 | Mask strength / triads per screen height | Lower the triad count for a coarser mask. Below about 2 screen pixels per triad the mask fades out to avoid moir√©, so the fine PC mask shows best at 4K. |
 | White point | 6500 K neutral, 9300 K is the bluish white many TVs and monitors had. |
+| Phosphors | 0 auto, 1 sRGB, 2 SMPTE-C, 3 EBU, 4 Japanese P22. The colours of the tube's phosphors. Auto: SMPTE-C on NTSC sets, EBU on PAL sets, sRGB on PC monitors, Japanese P22 on arcade monitors; the Trinitron preset uses Japanese P22 and the studio monitor EBU. Colours outside your display's range are clipped in SDR and kept in HDR. |
 | Curvature, Rounded corners, Glass glow, Glass glow size, Darker edges, Overscan, Room reflection | The glass. Glass glow sets how strong the halo around bright things is, Glass glow size how far it reaches. Set curvature and corners to 0 for a flat screen (that is all the `flat` presets change). Negative overscan adds a black border, like PC monitors. |
 
 | HDR: paper white, HDR: display peak | Only in the `hdr` presets. Paper white is how bright a full white screen is, display peak the most your display can show. See [HDR](#hdr). |

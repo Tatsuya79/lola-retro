@@ -14,6 +14,7 @@ layout(location = 1) in vec2 TexCoord;
 layout(location = 0) out vec2 vTexCoord;
 layout(location = 1) flat out vec3 vWhite;
 layout(location = 2) flat out vec4 vTiming;   // scan mode, PAL, interlaced, internal resolution
+layout(location = 3) flat out float vPhos;    // phosphor set
 
 // Blackbody colour of the TV's white, relative to D65
 vec3 kelvinRGB(float T)
@@ -34,12 +35,16 @@ void main()
     vWhite = c / dot(c, vec3(0.2126, 0.7152, 0.0722));
     Timing T = getTiming(params.OriginalSize.xy, params.FrameCount);
     vTiming = vec4(T.scan, T.pal, T.interlace, T.scale);
+    vPhos = phosphorSet(T);
+    // the white is set on the phosphor drives so that it ends up at the chosen colour temperature
+    if (vPhos > 1.5) vWhite = inverse(phosphorMatrix(vPhos)) * vWhite;
 }
 
 #pragma stage fragment
 layout(location = 0) in vec2 vTexCoord;
 layout(location = 1) flat in vec3 vWhite;
 layout(location = 2) flat in vec4 vTiming;
+layout(location = 3) flat in float vPhos;
 layout(location = 0) out vec4 FragColor;
 layout(set = 0, binding = 2) uniform sampler2D LR_Beam;
 layout(set = 0, binding = 3) uniform sampler2D LR_Glow;
@@ -188,6 +193,10 @@ void main()
         float gy = Lf / BH;
         float gin = smoothstep(-0.03, 0.03, gy) * smoothstep(1.03, 0.97, gy) * smoothstep(-0.03, 0.03, ua.x) * smoothstep(1.03, 0.97, ua.x);
         col = mix(col, textureLod(LR_Glow, vec2(ua.x, gy), 0.0).rgb * vWhite, global.LR_GLOW * gin);
+
+        // the tube's phosphors are not exactly the display's primaries; colours outside
+        // the display gamut are clipped in SDR and kept in HDR
+        if (vPhos > 1.5) col = phosphorMatrix(vPhos) * col;
 
 #ifdef LR_HDR
         // HDR: the display has headroom above paper white, so bright phosphor dots and
