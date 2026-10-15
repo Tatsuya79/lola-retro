@@ -96,18 +96,26 @@ void main()
         float tn = n / fs;
         float sh = global.LR_SHARP * 1.4;
 
+        // All taps sit on whole samples. A tap between two samples would read a linear
+        // blend of them, and that blend loses part of the subcarrier (colour came out
+        // up to 9% weaker). The tap step is a whole number of samples, so the subcarrier
+        // still advances by the same angle from tap to tap.
+
         // luma: (1 + sh) * G(s1) - sh * G(s2), unit gain at DC, boost in the middle.
-        // The taps are s2 / 4 apart, so the Gaussian weights only depend on the tap number.
         float s1 = 0.1325 / fcY;
         float s2 = s1 * 2.5;
-        float stepY = 0.25 * s2 * fs;              // tap spacing in samples
+        float mY = max(1.0, ceil(0.25 * s2 * fs)); // tap step in samples (at most s2 / 4)
+        float nY = min(ceil(3.0 * s2 * fs / mY), 12.0);
+        float c1 = -0.5 * mY * mY / (s1 * s1 * fs * fs);
+        float c2 = -0.5 * mY * mY / (s2 * s2 * fs * fs);
         float a1 = 0.0, a2 = 0.0, w1s = 0.0, w2s = 0.0;
-        for (int k = -12; k <= 12; k++)
+        int nYi = int(nY);
+        for (int k = -nYi; k <= nYi; k++)
         {
             float u = float(k);
-            float w1 = exp(-0.1953125 * u * u);    // exp(-0.5 (0.625 k)^2)
-            float w2 = exp(-0.03125 * u * u);      // exp(-0.5 (0.25 k)^2)
-            float sp = n + u * stepY;
+            float w1 = exp(c1 * u * u);
+            float w2 = exp(c2 * u * u);
+            float sp = n + u * mY;
             float s0 = sig(sp, y).x;
             if (comb) s0 = 0.5 * (s0 + sig(sp, y - st).x);
             a1 += w1 * s0; a2 += w2 * s0; w1s += w1; w2s += w2;
@@ -115,27 +123,34 @@ void main()
         Y = (1.0 + sh) * a1 / w1s - sh * a2 / w2s;
 
         // chroma: demodulate against the subcarrier, then low-pass.
-        // The taps are 0.15 sigma apart. The subcarrier advances by the same angle from tap
-        // to tap, so its (cos, sin) is rotated by that angle instead of recomputed per tap.
+        // The subcarrier's (cos, sin) is rotated from tap to tap instead of recomputed.
         float sc = 0.1325 / fcC;
-        float dtC = 0.15 * sc;                     // tap spacing in microseconds
-        float stepC = dtC * fs;                    // in samples
+        float mC = max(1.0, ceil(0.15 * sc * fs)); // tap step in samples (at most 0.15 sigma)
+        float nC = min(ceil(3.0 * sc * fs / mC), 20.0);
+        float cw = -0.5 * mC * mC / (sc * sc * fs * fs);
         float vs = vSign(y, T), vsp = vSign(y - st, T);
         float tint = pal ? 0.0 : radians(global.LR_TINT);
+        if (cable < 0.5)
+        {
+            // RF: the echo is on the colour burst too, so the TV locks to the shifted phase
+            float ea = -TAU * T.fsc * RF_ECHO_US;
+            tint += atan(RF_ECHO * sin(ea), 1.0 + RF_ECHO * cos(ea));
+        }
         float ph0 = phaseAt(tn, y, T) + tint;      // subcarrier phase at the centre tap
-        float da = TAU * T.fsc * dtC;
+        float da = TAU * T.fsc * mC / fs;
         vec2 rp = vec2(cos(da), sin(da));
         vec2 e0 = vec2(cos(ph0), sin(ph0));
-        float a0 = ph0 - 20.0 * da;
+        float a0 = ph0 - nC * da;
         a0 -= TAU * floor(a0 / TAU + 0.5);         // keep the angle small for an accurate sin/cos
         vec2 e = vec2(cos(a0), sin(a0));           // (cos, sin) at the first tap
         vec2 acc = vec2(0.0), accp = vec2(0.0);    // sums of w * signal * (sin, cos)
         float wcs = 0.0;
-        for (int k = -20; k <= 20; k++)
+        int nCi = int(nC);
+        for (int k = -nCi; k <= nCi; k++)
         {
             float u = float(k);
-            float w = exp(-0.01125 * u * u);       // exp(-0.5 (0.15 k)^2)
-            float sp = n + u * stepC;
+            float w = exp(cw * u * u);
+            float sp = n + u * mC;
             vec2 v0 = sig(sp, y);
             float s0 = sv ? v0.y : v0.x;
             if (comb) s0 = 0.5 * (v0.x - sig(sp, y - st).x);
@@ -164,6 +179,14 @@ void main()
             vec2 rd = vec2(cos(dl), sin(dl));
             vec2 csp = 2.0 * vec2(accp.x * rd.x + accp.y * rd.y, vsp * (accp.y * rd.x - accp.x * rd.y));
             uv = 0.5 * (uv + csp / wcs);
+        }
+        if (cable < 0.5)
+        {
+            // RF: the echo also lands on sync and burst, and the TV's automatic gain and
+            // colour control scale the picture back, so flat areas keep their level and colour
+            float ea = -TAU * T.fsc * RF_ECHO_US;
+            Y /= 1.0 + RF_ECHO;
+            uv /= length(vec2(1.0 + RF_ECHO * cos(ea), RF_ECHO * sin(ea)));
         }
     }
 

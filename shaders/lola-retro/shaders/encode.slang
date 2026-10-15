@@ -110,8 +110,8 @@ void main()
     {
         // RF: composite plus an echo and snow
         float comp = a.x + a.y;
-        vec2 g = enc(n - 0.8 * fs, y, fs, T, trap);
-        comp += 0.12 * (g.x + g.y);
+        vec2 g = enc(n - RF_ECHO_US * fs, y, fs, T, trap);
+        comp += RF_ECHO * (g.x + g.y);
         float seed = float(params.FrameCount % 997u);
         comp += (hash13(vec3(n, y, seed)) - 0.5) * global.LR_NOISE;
         comp += (hash13(vec3(floor(n / 7.0), y, seed + 3.0)) - 0.5) * global.LR_NOISE * 0.8;

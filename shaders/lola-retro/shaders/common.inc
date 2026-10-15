@@ -91,6 +91,10 @@ layout(std140, set = 0, binding = 0) uniform UBO
 
 const float TAU = 6.28318530718;
 
+// RF: the echo (multipath ghost) added by the antenna path
+const float RF_ECHO = 0.12;      // strength
+const float RF_ECHO_US = 0.8;    // delay in microseconds
+
 float hash13(vec3 p3)
 {
     p3 = fract(p3 * 0.1031);
@@ -173,6 +177,7 @@ Timing getTiming(vec2 orig, uint frameCount)
     float id = global.LR_CONSOLE < 0.5 ? autoConsole(nat) : global.LR_CONSOLE;
     vec4 a; vec4 b; float c;
     consoleTable(id, a, b, c);
+    if (id > 4.5 && id < 5.5 && nat.x > 700.0) a.z = 720.0;   // PS2 720-wide modes keep 13.5 MHz
     t.scan = a.w;
     t.interlace = (t.scan < 0.5 && nat.y > 300.0) ? 1.0 : 0.0;
     if (global.LR_NORM > 1.5) t.pal = 1.0;
