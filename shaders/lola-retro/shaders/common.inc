@@ -51,6 +51,12 @@ layout(push_constant) uniform Push
 #pragma parameter LR_VIGNETTE "Darker edges" 0.3 0.0 0.7 0.01
 #pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" 0.05 -0.08 0.12 0.005
 #pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0.0 0.03 0.001
+#pragma parameter LR_HDR_PC "--- PC monitor (31 kHz modes) ---" 0.0 0.0 0.0 1.0
+#pragma parameter LR_PC_SIZE "Monitor size (inches)" 15.0 14.0 21.0 1.0
+#pragma parameter LR_PC_PITCH "Dot pitch (mm)" 0.28 0.20 0.45 0.01
+#pragma parameter LR_PC_SPOT_LO "Spot size in dark areas (mm)" 0.30 0.10 0.80 0.01
+#pragma parameter LR_PC_SPOT_HI "Spot size on white (mm)" 0.45 0.15 1.00 0.01
+#pragma parameter LR_PC_CORNER "Spot size in the corners (x centre)" 1.4 1.0 2.5 0.05
 
 layout(std140, set = 0, binding = 0) uniform UBO
 {
@@ -93,6 +99,12 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_VIGNETTE;
     float LR_OVERSCAN;
     float LR_AMBIENT;
+    float LR_HDR_PC;
+    float LR_PC_SIZE;
+    float LR_PC_PITCH;
+    float LR_PC_SPOT_LO;
+    float LR_PC_SPOT_HI;
+    float LR_PC_CORNER;
 #ifdef LR_HDR
     float LR_HDR_OUT;
     float LR_NITS_WHITE;
@@ -212,6 +224,8 @@ Timing getTiming(vec2 orig, uint frameCount)
     }
     // full source width: a wider (upscaled) line still takes the same time
     t.pclk = mix(a.x, a.y, t.pal) * orig.x / a.z;
+    // SVGA modes run faster lines: VESA 75 Hz clocks (800x600 49.5 MHz, 1024x768 78.75 MHz)
+    if (t.scan > 0.5 && t.scan < 1.5 && orig.x > 720.0) t.pclk = 78.75 * orig.x * orig.y / (1024.0 * 768.0);
     t.fsc = t.pal > 0.5 ? 4.433619 : 3.579545;
     t.lineFrac = mix(b.x, b.y, t.pal);
     t.fieldStep = mix(b.z, b.w, t.pal);
@@ -240,6 +254,42 @@ float vSign(float y, Timing t)
     if (t.pal < 0.5) return 1.0;
     float pl = physLine(y, t) + t.vsw + (oddField(y, t) ? 1.0 : 0.0);
     return mod(pl, 2.0) < 0.5 ? 1.0 : -1.0;
+}
+
+// ---------------------------------------------------------------------------
+// PC monitor (31 kHz modes): the tube is described in millimetres, so every video mode
+// (320x200 doubled to 400 lines, 640x480, 800x600, 1024x768) follows from the same tube.
+// Typical mid-90s 15-inch monitor: 13.8-14 inch viewable, 0.28 mm dot pitch, a spot of
+// about 0.45 mm on white (sharp at 800x600, soft at 1024x768), dynamic focus keeping the
+// corners below 1.5 x the centre spot.
+// ---------------------------------------------------------------------------
+
+const float FWHM_TO_SIGMA = 0.4246609;   // Gaussian: sigma = FWHM / (2 sqrt(2 ln 2))
+
+bool isPC(float scan) { return scan > 0.5 && scan < 1.5; }
+
+// Viewable tube face in mm: one inch less than the nominal size, 4:3
+vec2 pcTubeMM()
+{
+    float d = (global.LR_PC_SIZE - 1.0) * 25.4;
+    return vec2(0.8 * d, 0.6 * d);
+}
+
+// The picture is smaller than the tube face when overscan is negative (black border)
+vec2 pcPictureMM() { return pcTubeMM() / (1.0 - global.LR_OVERSCAN); }
+
+// The spot grows toward the corners (deflection defocus); c is the position on the tube, -1..1
+float pcCornerGrowth(vec2 c) { return 1.0 + (global.LR_PC_CORNER - 1.0) * 0.5 * dot(c, c); }
+
+// Standard normal density and cumulative distribution
+// (erf after Abramowitz & Stegun 7.1.26, error below 1.5e-7)
+vec3 gaussPdf(vec3 z) { return 0.39894228 * exp(-0.5 * z * z); }
+vec3 gaussCdf(vec3 z)
+{
+    vec3 x = abs(z) * 0.70710678;
+    vec3 t = 1.0 / (1.0 + 0.3275911 * x);
+    vec3 p = ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
+    return 0.5 + 0.5 * sign(z) * (1.0 - p * exp(-x * x));
 }
 
 // ---------------------------------------------------------------------------

@@ -67,9 +67,10 @@ void main()
 
     if (cable > 2.5)
     {
-        // RGB: no NTSC/PAL at all, only the video amplifier bandwidth (~6.5 MHz)
+        // RGB: no NTSC/PAL at all, only the video amplifier bandwidth: ~6.5 MHz in a TV,
+        // ~85 MHz in a 15-inch PC monitor (spec sheets of the 90s: 65-120 MHz)
         float xs = (n + 0.5) * T.pclk / fs;
-        float sigPx = 0.1325 / 6.5 * T.pclk;
+        float sigPx = 0.1325 / (isPC(T.scan) ? 85.0 : 6.5) * T.pclk;
 
         // dither blend: the 1-pixel alternating part around the five console pixels
         // the amplifier taps can reach, taken out of every tap below

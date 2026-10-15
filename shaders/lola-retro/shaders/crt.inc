@@ -51,12 +51,13 @@ layout(set = 0, binding = 3) uniform sampler2D LR_Glow;
 layout(set = 0, binding = 4) uniform sampler2D LR_CRTFeedback;
 
 // Beam of source line i at position x along the line (from the beam pass):
-// square root of its linear brightness, 0 outside the picture
-vec3 beamAt(float i, float x, float lines)
+// rgb = square root of its linear brightness, a = which spot made it (PC monitor);
+// 0 outside the picture
+vec4 beamAt(float i, float x, float lines)
 {
-    if (i < 0.0 || i >= lines) return vec3(0.0);
+    if (i < 0.0 || i >= lines) return vec4(0.0);
     vec2 bs = vec2(textureSize(LR_Beam, 0));
-    return textureLod(LR_Beam, vec2(x + 0.5 / bs.x, (i + 0.5) / bs.y), 0.0).rgb;
+    return textureLod(LR_Beam, vec2(x + 0.5 / bs.x, (i + 0.5) / bs.y), 0.0);
 }
 
 // Rear-projection screen: lenticular sheet with thin black stripes, no RGB pattern
@@ -152,23 +153,36 @@ void main()
 
         // vertical convergence error grows toward the edges (the horizontal one is in the beam pass)
         float convV = global.LR_CONV * 0.5 * (0.3 + 0.7 * c.y * abs(c.y));
+        // spot height in lines: TV in line units; PC monitor from mm on its tube, so the
+        // same spot covers more lines in 768-line modes than in 400-line ones
         vec2 sig = vec2(global.LR_SIG_LO, max(global.LR_SIG_LO, global.LR_SIG_HI)) * sgk;
+        if (vga)
+            sig = vec2(global.LR_PC_SPOT_LO, max(global.LR_PC_SPOT_LO, global.LR_PC_SPOT_HI))
+                * (FWHM_TO_SIGMA * pcCornerGrowth(c) * BH / pcPictureMM().y);
 
-        for (int k = -1; k <= 2; k++)
+        // every line within 3.5 spot widths: the lines left out are at least kn + 1 away
+        // (4 lines for 240p TV, more for wide spots: merged fields, 1024x768 on a PC monitor)
+        int kn = int(clamp(ceil(3.5 * sig.y - 1.0), 1.0, 6.0));
+        for (int k = -kn; k <= kn + 1; k++)
         {
             float j = j0 + float(k);
             float i = j * stepL + offL;
-            vec3 b = beamAt(floor(i / dbl), ua.x, srcH);
+            vec4 bb = beamAt(floor(i / dbl), ua.x, srcH);
+            vec3 b = bb.rgb;
             vec3 lc = b * b;                                      // linear brightness
-            vec3 isg = 1.0 / mix(vec3(sig.x), vec3(sig.y), b);    // 1 / beam width
+            // beam height: TV from the local brightness per gun; PC from the spot that made the light
+            vec3 isg = 1.0 / mix(vec3(sig.x), vec3(sig.y), vga ? vec3(bb.a) : b);
             vec3 d = vec3(u - j) + vec3(convV, 0.0, -convV);
             col += lc * exp(-0.5 * d * d * isg * isg) * isg * 0.39894228;
         }
         col *= smoothstep(-0.002, 0.002, ua.x) * smoothstep(1.002, 0.998, ua.x);
 
         // phosphor mask
-        float pitchPx = params.OutputSize.y / global.LR_MASK_TRIADS;
         float mt = global.LR_MASK_TYPE;
+        float triads = global.LR_MASK_TRIADS;
+        // PC monitor: from the dot pitch (a dot mask's pitch is diagonal, 0.866 of it horizontal)
+        if (vga) triads = pcTubeMM().y / (global.LR_PC_PITCH * (mt > 2.5 && mt < 3.5 ? 0.866 : 1.0));
+        float pitchPx = params.OutputSize.y / triads;
         float str = global.LR_MASK_STR * smoothstep(1.6, 2.6, pitchPx);
         if (mt > 0.5 && str > 0.0)
         {

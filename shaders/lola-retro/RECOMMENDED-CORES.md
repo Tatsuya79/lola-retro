@@ -61,7 +61,7 @@ and the picture is stable. Turn it off to see the fields alternate like on a rea
 
 | System | Core | Preset | Console timing | Settings |
 |---|---|---|---|---|
-| DOS | DOSBox Pure | PC Monitor (VGA) | 7 (set by the preset) | 320×200 games are drawn with VGA line doubling, like the real 31 kHz monitor. |
+| DOS, Windows 9x | DOSBox Pure | PC Monitor (VGA) | 7 (set by the preset) | Every PC mode on one 15-inch monitor: 320×200 is drawn with VGA line doubling (400 lines), 640×480 up to 1024×768 on the same tube. |
 | Amiga | PUAE | Amiga 1084S | auto (6) | Use a low-resolution (320-wide) or high-resolution (640-wide) mode without extra borders, so the frame is 320×256 or 640×512 on PAL. Otherwise set timing 6 by hand. |
 
 ## Not covered

@@ -75,13 +75,23 @@ and the bricks turn orange-red through the US TV decoder.
 
 ![Standard decoder and US TV decoder](docs/tv-colour-us-vs-pal.jpg)
 
+## PC monitor, in millimetres
+
+A PC monitor was not a TV. It ran at 31 kHz, drew 320×200 games twice (400 lines), and its beam and dot mask were
+much finer. The PC Monitor preset describes a typical mid-90s 15-inch monitor the way its spec sheet would:
+14-inch picture, 0.28 mm dot mask, a beam spot of 0.30–0.45 mm. Every mode follows from that one tube:
+320×200 gives chunky pixels with fine lines you only see up close, 640×480 is sharp enough for 1-pixel dots,
+and 1024×768 is a little soft, as it really was on a 15-inch screen.
+
+![PC monitor at 320x200, 640x480 and 1024x768](docs/pc-monitor-modes.jpg)
+
 ## Presets
 
 | | |
 |---|---|
 | ![](docs/consumer-tv-composite.jpg) **Consumer TV (Composite)**<br>Start here. The TV most people had. | ![](docs/consumer-tv-scart-rgb.jpg) **Consumer TV (SCART RGB)**<br>Same TV, clean picture. |
 | ![](docs/trinitron-s-video.jpg) **Trinitron (S-Video)**<br>PS2, GameCube, N64. | ![](docs/old-tv-rf.jpg) **Old TV (RF)**<br>Antenna cable, snow and ghosting. |
-| ![](docs/pc-monitor-vga.jpg) **PC Monitor (VGA)**<br>DOS games, Dreamcast VGA. | ![](docs/amiga-1084s.jpg) **Amiga 1084S**<br>Amiga and 15 kHz arcade. |
+| ![](docs/pc-monitor-vga.jpg) **PC Monitor (VGA)**<br>DOS and Windows 95 games, Dreamcast VGA. | ![](docs/amiga-1084s.jpg) **Amiga 1084S**<br>Amiga and 15 kHz arcade. |
 
 Also included: **Studio Monitor (RGB)** for the PVM look and **CRT Projector** for 24 kHz arcade games.
 Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola-retro/RECOMMENDED-CORES.md).
@@ -97,6 +107,8 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
 - **Electron beam.** Each line is a spot whose width grows with brightness, in both directions and per colour gun.
   Bright detail merges and rounds off, dark detail stays sharp. Interlaced fields alternate; VGA 200-line modes are drawn twice.
 - **Phosphor mask.** Aperture grille (with Trinitron damper wires), slot mask, shadow mask, or a projection screen.
+- **PC monitor.** 31 kHz modes use a tube described in millimetres (size, dot pitch, beam spot on dark and on
+  white, larger in the corners), so 320×200, 640×480, 800×600 and 1024×768 each look as they did on a 15-inch monitor.
 - **Colour of the TV.** US and Japanese TVs demodulate with "red push" (axes and gains from the Sony CXA2025AS
   datasheet), PAL TVs by the standard; phosphors are SMPTE-C, EBU or Japanese P22 instead of sRGB.
 - **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow.
@@ -132,6 +144,7 @@ Measured on synthetic patterns:
 | Composite at the subcarrier (3.58 MHz) | luma notched out, the energy shows up as colour (the rainbow) |
 | Comb filter and S-Video | no false colour |
 | RGB bandwidth | about 6.5 MHz, like a consumer TV's video amplifier |
+| PC monitor, 320×200 to 1024×768 | spot width, 1-pixel stripe contrast, line structure and brightness within 2% of the physics |
 
 ## What is in here
 
