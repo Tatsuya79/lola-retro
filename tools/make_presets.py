@@ -138,6 +138,20 @@ PRESETS = {
         LR_MON_CORNER=1.5),
 }
 
+# Better 15-inch PC monitors: the same tube size with a finer mask and a smaller, better focused beam.
+# "extreme" is sharper than any real 15-inch monitor (the gaps between lines show at 1024x768),
+# for long work on the desktop.
+PC_TUBES = {
+    "pc-monitor-vga-good": dict(LR_MON_PITCH=0.25, LR_MON_SPOT_LO=0.25, LR_MON_SPOT_HI=0.35),
+    "pc-monitor-vga-premium": dict(LR_MON_PITCH=0.25, LR_MON_SPOT_LO=0.20, LR_MON_SPOT_HI=0.28, LR_MON_CORNER=1.3),
+    "pc-monitor-vga-premium-plus": dict(LR_MON_PITCH=0.24, LR_MON_SPOT_LO=0.17, LR_MON_SPOT_HI=0.24,
+                                        LR_MON_CORNER=1.25, LR_CONV=0.08),
+    "pc-monitor-vga-extreme": dict(LR_MON_PITCH=0.22, LR_MON_SPOT_LO=0.13, LR_MON_SPOT_HI=0.18,
+                                   LR_MON_CORNER=1.15, LR_CONV=0.05, LR_GLOW=0.02),
+}
+for _name, _over in PC_TUBES.items():
+    PRESETS[_name] = {**PRESETS["pc-monitor-vga"], **_over}
+
 
 def fmt(v):
     return f"{float(v):.4f}".rstrip("0").rstrip(".") if "." in f"{float(v):.4f}" else str(v)

@@ -21,7 +21,7 @@ On an HDR display, use the same presets from `lola-retro/hdr/curved` instead, se
 
 ## Curved or flat
 
-Every folder has the same 8 presets.
+Every folder has the same 12 presets.
 
 | Folder | Screen |
 |---|---|
@@ -40,6 +40,8 @@ Every folder has the same 8 presets.
 | `old-tv-rf` | Nostalgia for the antenna cable. Noisy on purpose. | Old TV on the antenna input. RF snow, ghosting, soft focus, round tube. |
 | `crt-projector` | 24 kHz arcade games such as Daytona USA (Sega Model 2). | Arcade CRT projector (three tubes on a flat screen). No mask, colour fringes, soft. |
 | `pc-monitor-vga` | DOS and Windows 9x games (320×200 up to 1024×768), Dreamcast on the VGA cable. | A typical mid-90s 15-inch PC monitor, described in millimetres (see [PC monitor](#pc-monitor)). 320×200 is drawn twice (400 lines), fine dot mask, black border. |
+| `pc-monitor-vga-good`, `-premium`, `-premium-plus` | The same, on a better 15-inch monitor; sharper Windows desktops at 800×600 and 1024×768. | Finer dot mask and a smaller, better focused beam (see [Better PC monitors](#better-pc-monitors)). |
+| `pc-monitor-vga-extreme` | Long work on the Windows desktop. | Sharper than any real 15-inch tube: the gaps between the lines show even at 1024×768. |
 | `amiga-1084s` | Amiga, and 15 kHz arcade games (CPS1/2, Neo Geo MVS). | Commodore 1084S on RGB, built from its service manual (see [Amiga 1084S](#amiga-1084s)). 0.42 mm slot mask, the whole picture with a black border. |
 
 The CRT projector already has a flat screen, so its `curved` version only adds rounded corners.
@@ -154,7 +156,24 @@ with 1-pixel dots still visible, and 1024×768 is soft, as it was on a 15-inch t
 a 17-inch). The dot mask is too fine to show at 1080p, as it was on the real monitor at normal viewing
 distance; at 4K it shows as a fine texture.
 
-For the stand-alone PC emulator 86Box, the repository has this preset converted to GLSL (`86box/`).
+### Better PC monitors
+
+The `pc-monitor-vga` preset is an average 15-inch monitor. Better ones had a finer mask and a smaller,
+better focused beam, and on them 1024×768 was sharp. The same 15-inch tube in four more steps:
+
+| Preset | Dot pitch | Spot dark / white | Corners | Like |
+|---|---|---|---|---|
+| `pc-monitor-vga` | 0.28 mm | 0.30 / 0.45 mm | 1.4× | an average 15-inch monitor |
+| `pc-monitor-vga-good` | 0.25 mm | 0.25 / 0.35 mm | 1.4× | a good mid-range 15-inch monitor |
+| `pc-monitor-vga-premium` | 0.25 mm | 0.20 / 0.28 mm | 1.3× | a premium 15-inch monitor |
+| `pc-monitor-vga-premium-plus` | 0.24 mm | 0.17 / 0.24 mm | 1.25× | the best 15-inch monitors; misconvergence 0.08 |
+| `pc-monitor-vga-extreme` | 0.22 mm | 0.13 / 0.18 mm | 1.15× | no real 15-inch monitor; misconvergence 0.05, glass glow 0.02 |
+
+`extreme` goes past the real thing on purpose: the beam is narrower than the line pitch at 1024×768, so the
+picture stays crisp and calm for long work on the desktop, with gaps between the lines no real monitor had in
+that mode. For a Trinitron or Diamondtron, set **Mask** to 1 (aperture grille).
+
+For the stand-alone PC emulator 86Box, the repository has these presets converted to GLSL (`86box/`).
 
 ## Amiga 1084S
 

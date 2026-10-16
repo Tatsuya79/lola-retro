@@ -1,6 +1,6 @@
 # Lola Retro for 86Box
 
-The PC monitor (VGA) preset of [Lola Retro](https://github.com/zoran123456/lola-retro) for the PC emulator
+The PC monitor (VGA) presets of [Lola Retro](https://github.com/zoran123456/lola-retro) for the PC emulator
 [86Box](https://86box.net). It is the RetroArch shader converted to GLSL, and it gives the same picture: a
 typical mid-90s 15-inch monitor described the way its spec sheet would (14-inch picture, 0.28 mm dot mask,
 a beam spot of 0.30–0.45 mm), so every video mode looks as it did on that one tube. 320×200 games show
@@ -15,8 +15,18 @@ chunky pixels with fine lines, 640×480 is sharp, 1024×768 a little soft.
 1. 86Box 6.0 or newer.
 2. Put this `lola-retro` folder anywhere, for example next to 86Box.
 3. **View → Renderer → OpenGL (3.0 Core)** (newer builds call it just OpenGL).
-4. **View → Renderer options…** opens the Shader Manager. **Add**, choose `lola-retro/pc-monitor-vga.glslp`, then **OK**.
+4. **View → Renderer options…** opens the Shader Manager. **Add**, choose one of the presets below, then **OK**.
    Keep it the only shader in the list: it needs the emulator's frame as its input.
+
+| Preset | Monitor |
+|---|---|
+| `pc-monitor-vga.glslp` | An average 15-inch monitor (0.28 mm dot mask, beam spot 0.30–0.45 mm). Right for DOS games. |
+| `pc-monitor-vga-good.glslp` | A good 15-inch monitor (0.25 mm, 0.25–0.35 mm). |
+| `pc-monitor-vga-premium.glslp` | A premium 15-inch monitor (0.25 mm, 0.20–0.28 mm): 1024×768 is sharp. |
+| `pc-monitor-vga-premium-plus.glslp` | The best 15-inch monitors (0.24 mm, 0.17–0.24 mm). |
+| `pc-monitor-vga-extreme.glslp` | Sharper than any real tube (0.22 mm, 0.13–0.18 mm), for long work on the Windows desktop. |
+
+All five use the same shader files and differ only in their parameter values.
 
 ## 86Box settings
 
@@ -35,7 +45,7 @@ as RetroArch's 320×200.
 
 ## Parameters
 
-**View → Renderer options… → Configure** lists 23 of them. They mean the same as in RetroArch (see the
+**View → Renderer options… → Configure** lists 23 of them, for each preset separately. They mean the same as in RetroArch (see the
 [shader pack's README](https://github.com/zoran123456/lola-retro/blob/main/shaders/lola-retro/README.md));
 **Reset** returns to the preset. The rest (cable, console timing, the TV controls) is fixed at the preset's values.
 To fill more of the screen, raise the shader's **Overscan** (like turning up the monitor's width and height).

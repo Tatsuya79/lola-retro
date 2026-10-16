@@ -84,7 +84,9 @@ A PC monitor was not a TV. It ran at 31 kHz, drew 320×200 games twice (400 line
 much finer. The PC Monitor preset describes a typical mid-90s 15-inch monitor the way its spec sheet would:
 14-inch picture, 0.28 mm dot mask, a beam spot of 0.30–0.45 mm. Every mode follows from that one tube:
 320×200 gives chunky pixels with fine lines you only see up close, 640×480 is sharp enough for 1-pixel dots,
-and 1024×768 is a little soft, as it really was on a 15-inch screen.
+and 1024×768 is a little soft, as it really was on a 15-inch screen. Four more presets put the same 15-inch
+tube in better monitors (good, premium, premium+), up to `extreme`, sharper than any real tube, for long
+work on the desktop.
 
 ![PC monitor at 320x200, 640x480 and 1024x768](docs/pc-monitor-modes.jpg)
 
@@ -108,8 +110,8 @@ fine texture, the lines show in darker areas, and the picture sits in the black 
 
 ## 86Box
 
-The PC monitor preset also comes as GLSL for [86Box](https://86box.net), the PC emulator: with the OpenGL
-renderer, add `86box/lola-retro/pc-monitor-vga.glslp` in **View → Renderer options…**. Same picture as in
+The PC monitor presets also come as GLSL for [86Box](https://86box.net), the PC emulator: with the OpenGL
+renderer, add `86box/lola-retro/pc-monitor-vga.glslp` (or one of the sharper ones) in **View → Renderer options…**. Same picture as in
 RetroArch, from text mode and 320×200 up to 1024×768; setup and settings in its [README](86box/lola-retro/README.md).
 
 ## Presets
@@ -190,9 +192,9 @@ Measured on synthetic patterns:
 
 | Folder | Contents |
 |---|---|
-| `shaders/lola-retro/` | The RetroArch shader pack (slang): 8 presets, each in a `curved/` and a `flat/` version, plus the same for HDR displays in `hdr/`. Details in its [README](shaders/lola-retro/README.md). |
+| `shaders/lola-retro/` | The RetroArch shader pack (slang): 12 presets, each in a `curved/` and a `flat/` version, plus the same for HDR displays in `hdr/`. Details in its [README](shaders/lola-retro/README.md). |
 | `amiberry/lola-retro/` | The Amiga 1084S preset converted to GLSL for Amiberry. Details in its [README](amiberry/lola-retro/README.md). |
-| `86box/lola-retro/` | The PC monitor preset converted to GLSL for 86Box. Details in its [README](86box/lola-retro/README.md). |
+| `86box/lola-retro/` | The PC monitor presets converted to GLSL for 86Box. Details in its [README](86box/lola-retro/README.md). |
 | `web/lola-retro.html` | The original WebGL version. Open it in a browser, try test scenes or drop in your own screenshots. |
 | `tools/` | Preset generator, GLSL converter, compile checker and headless preview renderers. |
 | `test-images/` | Native-resolution test frames used for the previews. |
