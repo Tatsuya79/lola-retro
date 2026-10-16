@@ -34,7 +34,7 @@
 #pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0 0 1 1
 #pragma parameter LR_BACKDROP "Around the tube (0 black, 1 room, 2 space)" 0 0 2 1
 #pragma parameter LR_ROOM "Room light (1 dim room, 3 lit room, 20 daylight)" 1 0 30 0.5
-#pragma parameter LR_SHEEN "Casing sheen (0 matte, 0.5 real plastic, 1 glossy)" 0.5 0 1 0.05
+#pragma parameter LR_SPILL "Screen light on the casing (0 off, 1 as on the real one)" 1 0 3 0.1
 
 uniform vec2 InputSize;         // the previous pass's picture (the frame for the first pass)
 uniform vec2 TextureSize;       // its texture, rounded up to a power of two
@@ -82,7 +82,7 @@ uniform float LR_SCREEN_H;
 uniform float LR_SCREEN_UNIT;
 uniform float LR_BACKDROP;
 uniform float LR_ROOM;
-uniform float LR_SHEEN;
+uniform float LR_SPILL;
 
 // Lola Retro - pass 1: console video encoder.
 // RGB -> YUV, chroma band-limited and QAM-modulated onto the colour subcarrier.

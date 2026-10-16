@@ -30,8 +30,8 @@ The defaults are right. What matters:
 around a 320×256 screen, −0.015 is the factory setting with its wide black borders. To see the monitor at its real size on a large display instead, enter your screen's
 height under **Real size** (in cm, or in inches with unit 1), in full screen. **Around the tube** then
 puts the monitor around it, as large as the real one: in a room (1) or floating in space (2). **Room light**
-sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight, and **Casing sheen** how much
-the plastic reflects it (0 matte, 0.5 as real plastic, 1 glossy).
+sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight, and **Screen light on the casing**
+how strongly the screen lights the walls around the glass (1 as on the real monitor).
 
 ## Parameters
 

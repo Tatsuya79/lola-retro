@@ -173,9 +173,9 @@ vec3 tilt(vec2 dir, float phi) { return vec3(dir * sin(phi), cos(phi)); }
 
 // Plastic lit by the room. Diffuse: light from above, a little from the right and in front (as in
 // the photos of the real monitors), plus some from the rest of the room; 1 on a surface facing
-// the viewer. Sheen (gloss 0.5: plastic as it is, 4% reflection head-on and more at grazing angles;
-// 0 none, 1 twice that and sharper), seen from 60 cm in front of the tube: the room reflected,
-// blurred (a light ceiling above, a darker desk and floor below, so faces and edges turned up look
+// the viewer. Sheen of a satin finish (gloss 0.5: 4% reflection head-on, more at grazing angles;
+// 1 is twice that and sharper), seen from 60 cm in front of the tube: the room reflected, blurred
+// (a light ceiling above, a darker desk and floor below, so faces and edges turned up look
 // lighter), and the ceiling lamp, 1.2 m above the monitor, in front of it and a little to the
 // right, as a soft highlight. P: position in mm (y up, z toward the viewer), n: which way the
 // surface faces, occ: how much of the room's light reaches it.
@@ -330,7 +330,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     vec3 alb = albedo * mix(1.0, 0.92, rec);
     if (!tv)             // the plastic has aged a little unevenly
         alb *= 1.0 - (pc ? 0.06 : 0.03) * valueNoise(p / 30.0 + 7.0);
-    float gloss = global.LR_SHEEN;
+    float gloss = 0.5;
     alb = mix(alb, vec3(0.02), 1.0 - smoothstep(mw - aa, mw + aa, d));
 
     vec3 lamp = vec3(0.0);                                        // the power light
@@ -398,7 +398,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
             }
             float socc = mix(0.7, 1.0, smoothstep(5.0, 2.5, sp.y))    // in the shadow of the front above
                        * (1.0 - 0.6 * seam);
-            stripCol = plastic(albedo * 0.97, tilt(sdir, sphi), vec3(p, 0.0), light, socc, global.LR_SHEEN);
+            stripCol = plastic(albedo * 0.97, tilt(sdir, sphi), vec3(p, 0.0), light, socc, 0.5);
             float ld = roundBox(sp - vec2(70.0, -0.5), vec2(1.2, 0.6), 0.3);
             lamp += vec3(0.12, 1.0, 0.2) * (0.6 * (1.0 - smoothstep(-aa, aa, ld)) + 0.03 * exp(-0.5 * max(ld, 0.0) * max(ld, 0.0) / 9.0)) * strip;
         }
@@ -412,50 +412,33 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     }
 
     // The screen lights the walls of the recess, which face the picture beside them, so they
-    // change with it. A point on a wall z mm in front of the glass sees the picture from about
-    // 0.7 z to 3 z beyond the edge; a Lambert screen of luminance L gives it 0.67 L (the Amiga's
-    // 55-degree walls) or 0.46 L (45 degrees) of illuminance, so the wall shines at 0.21 or 0.15
-    // of L times its albedo. The glass lets about 60% out at these angles, and the dot mask and
-    // the lines leave about 70% of the picture's light: 0.09 and 0.06. Six samples of the glowing
-    // picture over that region (it gets wider further from the glass).
-    vec3 pic = vec3(0.0), mirror = vec3(0.0);
-    float facing = smoothstep(-0.6, 1.2, u);
+    // change with it (Screen light on the casing). A point on a wall z mm in front of the phosphor
+    // (which sits about 10 mm behind the front of the glass) sees the picture from about 0.7 z to
+    // 3 z beyond the edge; a Lambert screen of luminance L gives it 0.67 L (the Amiga's 55-degree
+    // walls) or 0.46 L (45 degrees) of illuminance, so the wall shines at 0.21 or 0.15 of L times
+    // its albedo. On these slanted paths the tinted glass lets about 30% out, and the dot mask
+    // and the lines leave about 70% of the picture's light: 0.045 and 0.03. Plastic scatters it,
+    // it does not mirror the picture. Six samples of the glowing picture over that region.
+    vec3 pic = vec3(0.0);
+    float facing = smoothstep(-0.6, 1.2, u) * global.LR_SPILL;
     if (facing > 0.0)
     {
         float ov = 1.0 - global.LR_OVERSCAN;
         vec2 edge = clamp(c * 0.5 * ov + 0.5, 0.0, 1.0);          // the tube's edge on the picture
         vec2 nt = boxOut((tc - 0.5) * tube, inner, 15.0);         // outward, in texture orientation
         vec2 inward = -nt / tube * ov, side = vec2(-nt.y, nt.x) / tube * ov;   // per mm
-        float z = (amiga ? 1.43 : 1.0) * max(d - mw, 0.0);
+        float z = (amiga ? 1.43 : 1.0) * max(d - mw, 0.0) + 10.0;
         vec3 gl = vec3(0.0);
         for (int i = 0; i < 2; i++)
             for (int j = -1; j <= 1; j++)
             {
-                vec2 q = edge + inward * ((i == 0 ? 0.9 : 2.4) * z + 1.0) + side * (1.3 * float(j) * z);
+                vec2 q = edge + inward * ((i == 0 ? 0.9 : 2.4) * z) + side * (1.3 * float(j) * z);
                 gl += (j == 0 ? 0.25 : 0.125) * textureLod(LR_Glow, clamp(q, 0.0, 1.0), 0.0).rgb;
             }
-        pic = gl * vWhite * (amiga ? 0.09 : 0.06) * facing;
-
-        // and, as glossy as the plastic is (Casing sheen), the picture mirrored in the walls: the
-        // view reflected off a wall reaches the glass a little further in (on the Amiga's steep
-        // walls; the PC monitor's shallower ones mirror the room instead)
-        vec3 v = normalize(vec3(0.0, 0.0, 600.0) - vec3(p, z));
-        vec3 r = reflect(-v, n);
-        if (gloss > 0.0 && r.z < -0.05)
-        {
-            vec2 hit = p + r.xy * (z / -r.z);                     // where it meets the glass, mm, y up
-#ifndef LR_ROWS_UP
-            hit.y = -hit.y;                                       // texture orientation
-#endif
-            vec2 q = hit / tube * ov + 0.5;
-            vec2 inPic = smoothstep(0.0, 0.01, q) * smoothstep(1.0, 0.99, q);
-            float F = 0.04 + 0.96 * pow(1.0 - max(dot(v, n), 0.0), 5.0);
-            mirror = textureLod(LR_Glow, clamp(q, 0.0, 1.0), 0.0).rgb * vWhite
-                   * (0.55 * F * 2.0 * gloss * facing * inPic.x * inPic.y);
-        }
+        pic = gl * vWhite * (amiga ? 0.045 : 0.03) * facing;
     }
 
-    vec3 casing = plastic(alb, n, vec3(p, 0.0), light, occ, gloss) + alb * pic + mirror;
+    vec3 casing = plastic(alb, n, vec3(p, 0.0), light, occ, gloss) + alb * pic;
     vec3 behind = inSpace ? space((vTexCoord - 0.5) * params.OutputSize.xy * params.OutputSize.w,
                                   float(params.FrameCount % 1000000u) / 60.0, params.OutputSize.w)
                           : vec3(0.20, 0.195, 0.18) * light;   // the wall, further from the light
