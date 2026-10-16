@@ -32,6 +32,7 @@
 #pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.4 1 2.5 0.05
 #pragma parameter LR_SCREEN_H "Real size: your screen's height (0 = fill the screen)" 0 0 100 0.5
 #pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0 0 1 1
+#pragma parameter LR_BACKDROP "Around the tube (0 black, 1 monitor casing, 2 stars)" 0 0 2 1
 
 uniform vec2 InputSize;         // the previous pass's picture (the frame for the first pass)
 uniform vec2 TextureSize;       // its texture, rounded up to a power of two
@@ -77,6 +78,7 @@ uniform float LR_MON_SPOT_HI;
 uniform float LR_MON_CORNER;
 uniform float LR_SCREEN_H;
 uniform float LR_SCREEN_UNIT;
+uniform float LR_BACKDROP;
 
 // Lola Retro - pass 1: console video encoder.
 // RGB -> YUV, chroma band-limited and QAM-modulated onto the colour subcarrier.

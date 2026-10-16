@@ -46,6 +46,7 @@ uniform float LR_MON_SPOT_HI;
 uniform float LR_MON_CORNER;
 uniform float LR_SCREEN_H;
 uniform float LR_SCREEN_UNIT;
+uniform float LR_BACKDROP;
 
 // Lola Retro - pass 6 for SDR displays. The pass itself is in crt.inc.
 
@@ -62,6 +63,7 @@ uniform float LR_SCREEN_UNIT;
 //   LR_NO_FEEDBACK  no afterglow (the emulator has no feedback textures)
 //   LR_FIT_43       the tube stays 4:3 whatever shape the picture area has
 //   LR_PACKED_SPOT  the beam pass has no alpha channel, the spot is packed onto red
+//   LR_ROWS_UP      rows count from the bottom of the screen (OpenGL), for light from above
 
 // Lola Retro - shared parameters, uniforms and helpers for every pass.
 //
@@ -479,6 +481,97 @@ vec3 shoulder(vec3 x)
     return min(x, vec3(k)) + (1.0 - k) * (1.0 - exp(-e / (1.0 - k)));
 }
 
+// Signed distance from p to a box of half size b with corners of radius r (negative inside)
+float roundBox(vec2 p, vec2 b, float r)
+{
+    vec2 q = abs(p) - b + r;
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+
+// Direction away from that box at p
+vec2 boxOut(vec2 p, vec2 b, float r)
+{
+    return sign(p) * normalize(max(abs(p) - b + r, 1e-3));
+}
+
+// Room light on a surface facing n (z toward the viewer): it comes from above and in front,
+// 1 on a surface facing the viewer
+float lampOn(vec3 n) { return max(dot(n, vec3(0.0, 0.5, 0.866)), 0.0) / 0.866; }
+
+// What is around the tube (Around the tube), drawn where the glass ends. Linear light, like the
+// picture. c: tube position (-1..1, after curvature); dist, qq: how far outside the tube edge, in
+// the same units; tc: position on the tube before curvature (0..1); tubePx: tube size in pixels.
+// Sizes are in mm (the tube is Monitor size), so the casing is as large as the real one.
+vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
+{
+    vec2 tube = monTubeMM();
+    float mmpp = tube.y / tubePx.y;                               // mm per screen pixel
+    vec2 p = (tc - 0.5) * tubePx * mmpp;                          // mm from the tube centre
+    p.y = -p.y;                                                   // y up
+    float near = 1.0 / (1.0 + dot(p, p) / (260.0 * 260.0));       // brighter near the monitor
+    if (LR_BACKDROP > 1.5)
+    {
+        // stars: three slow layers, dim, twinkling a little (decoration, not a simulation)
+        vec2 s = vTexCoord * LR_OutputSize.xy * LR_OutputSize.w;   // in screen heights
+        float t = float(LR_FrameCount % 1000000u);
+        float pix = LR_OutputSize.w;
+        vec3 sum = vec3(0.0);
+        for (int l = 0; l < 3; l++)
+        {
+            float fl = float(l);
+            float cell = 0.010 + 0.012 * fl;
+            vec2 q = s / cell + vec2(t * (0.0006 + 0.0007 * fl), 0.0);
+            vec2 id = floor(q);
+            float h = hash13(vec3(id, 17.0 + fl));
+            if (h > 0.965)
+            {
+                vec2 at = vec2(hash13(vec3(id, 3.0 + fl)), hash13(vec3(id, 7.0 + fl)));
+                float r = length((fract(q) - at) * cell) / pix;      // distance in screen pixels
+                float b = (0.04 + 0.10 * fract(h * 37.0)) * (0.75 + 0.25 * sin(t * 0.03 + h * 200.0));
+                sum += b * exp(-0.5 * r * r / (0.6 + 0.5 * fl)) * mix(vec3(0.75, 0.85, 1.0), vec3(1.0), fract(h * 91.0));
+            }
+        }
+        return sum * (0.3 + 0.7 * near);
+    }
+    // The monitor's casing in the room, lit by the room light that also reflects on the glass
+    // (Room reflection: the tube face reflects about 12% of it). Front margins around the tube
+    // face (side, top, bottom) from real ones: the 1084S (cabinet 352 x 326 mm), a mid-90s
+    // 15-inch PC monitor, a TV. Beige plastic, dark plastic for TVs.
+    bool tv = !inMM(vTiming.x);
+    vec3 m = LR_MON_MM > 0.5 ? vec3(44.0, 33.0, 95.0) : tv ? vec3(50.0, 40.0, 90.0) : vec3(39.0, 35.0, 75.0);
+    vec3 albedo = tv ? vec3(0.035, 0.035, 0.038) : vec3(0.55, 0.51, 0.40);
+    float light = LR_AMBIENT / 0.12 * near;
+    float aa = mmpp;                                              // one screen pixel
+    // from the glass out: a shadowed slit, the bevel sloping down to the glass (12 mm wide
+    // where the glass bulges most), the front
+    float d = dist * mix(1.0, tubePx.x / tubePx.y, smoothstep(-0.05, 0.05, qq.x - qq.y)) * 0.5 * tube.y;
+    float gap = smoothstep(0.0, max(2.0, aa), d);
+    float bevel = 1.0 - smoothstep(-aa, aa, roundBox(p, 0.5 * tube + 12.0, 18.0));
+    vec2 half_ = 0.5 * tube + vec2(m.x, 0.5 * (m.y + m.z));
+    vec2 at = p - vec2(0.0, 0.5 * (m.y - m.z));
+    float o = roundBox(at, half_, 22.0);
+    float front = 1.0 - smoothstep(-aa, aa, o);
+    // which way the surface faces: the bevel toward the tube, the front toward the viewer,
+    // rolling over to the sides in its last 8 mm. The top bevel faces down and gets less light.
+    float roll = 1.5708 * clamp(1.0 + o / 8.0, 0.0, 1.0);
+    vec3 nFront = vec3(boxOut(at, half_, 22.0) * sin(roll), cos(roll));
+    vec3 nBevel = normalize(vec3(-0.64 * boxOut(p, 0.5 * tube, 15.0), 0.77));
+    float shade = mix(lampOn(nFront), lampOn(nBevel), bevel);
+    // the picture lights the bevel next to it, weakly: its light leaves the glass at a grazing
+    // angle. Three samples along the edge, wider apart further from it.
+    float ov = 1.0 - LR_OVERSCAN;
+    vec2 edge = clamp(c * 0.5 * ov + 0.5, 0.0, 1.0);
+    vec2 n = boxOut((tc - 0.5) * tube, 0.5 * tube, 15.0);         // in texture orientation
+    vec2 along = vec2(-n.y, n.x) * (4.0 + d) / tube * ov;
+    vec3 g = 0.5 * lr_tex_LR_Glow( edge, 0.0).rgb
+           + 0.25 * lr_tex_LR_Glow( clamp(edge - along, 0.0, 1.0), 0.0).rgb
+           + 0.25 * lr_tex_LR_Glow( clamp(edge + along, 0.0, 1.0), 0.0).rgb;
+    vec3 pic = g * vWhite * 0.035 * exp(-d / 4.0) * mix(0.1, 1.0, bevel);
+    vec3 casing = albedo * (light * shade + pic) * gap;
+    vec3 wall = vec3(0.30, 0.29, 0.27) * light;
+    return mix(wall, casing, front);
+}
+
 void lr_main()
 {
     float scan = vTiming.x, pal = vTiming.y, interlace = vTiming.z;
@@ -487,12 +580,14 @@ void lr_main()
     vec2 tc = vTexCoord;
     vec2 tubePx = LR_OutputSize.xy;                   // size of the tube face in screen pixels
     float px = 2.0 * LR_OutputSize.z;
-    // the picture area may be any shape: the 4:3 tube sits in its middle
     float va = LR_OutputSize.x * LR_OutputSize.w;
-    vec2 fit = va > 4.0 / 3.0 ? vec2(4.0 / 3.0 / va, 1.0) : vec2(1.0, 0.75 * va);
-    tc = (tc - 0.5) / fit + 0.5;
-    tubePx *= fit;
-    px /= fit.x;
+    {
+        // the picture area may be any shape: the 4:3 tube sits in its middle
+        vec2 fit = va > 4.0 / 3.0 ? vec2(4.0 / 3.0 / va, 1.0) : vec2(1.0, 0.75 * va);
+        tc = (tc - 0.5) / fit + 0.5;
+        tubePx *= fit;
+        px /= fit.x;
+    }
     // real size: the tube as large as the monitor it describes (Monitor size), on a screen whose
     // height is given; the picture area must be as tall as the screen (full screen)
     if (LR_SCREEN_H > 0.0)
@@ -604,6 +699,8 @@ void lr_main()
         col += LR_AMBIENT * vec3(0.80, 0.92, 0.87);
         col *= inside;
     }
+    if (LR_BACKDROP > 0.5 && inside < 1.0)
+        col += (1.0 - inside) * backdrop(c, max(dist, 0.0), qq, tc, tubePx);
 
     FragColor = vec4(col, 1.0);
 }

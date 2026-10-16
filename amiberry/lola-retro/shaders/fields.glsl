@@ -5,6 +5,7 @@
 #define LR_FIELDS
 #define LR_NO_FEEDBACK
 #define LR_FIT_43
+#define LR_ROWS_UP
 
 uniform vec2 TextureSize;       // Source: the previous pass (the frame for the first pass)
 uniform vec2 OrigTextureSize;   // Original: the emulator's frame

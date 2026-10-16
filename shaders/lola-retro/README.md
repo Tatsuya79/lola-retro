@@ -71,6 +71,7 @@ The composite simulation needs the console's real pixel grid:
 - **DOS and Windows 9x** (DOSBox Pure): leave the default VGA output; use `pc-monitor-vga`. It covers every PC
   mode from 320×200 to 1024×768 (the other presets would read 640×480 as a 480i TV picture).
 - RetroArch: **Settings → Video → Scaling → Aspect Ratio**: *Core provided* or *4:3*. Integer scaling is optional.
+  With **Around the tube** on, *Full* works too: the tube stays 4:3 and the casing fills the rest of the screen.
 
 **Internal resolution.** Frames with more than 576 lines are read as an upscaled 240-line mode (3× and up).
 At 2× an upscaled PS1 frame looks like 480i, so set Console timing 4 by hand. 480-line consoles
@@ -108,7 +109,8 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | Monitor size, Dot pitch | Nominal size in inches (the viewable picture is one inch less) and the mask pitch in mm. See [PC monitor](#pc-monitor) and [Amiga 1084S](#amiga-1084s). |
 | Spot size in dark areas / on white | The beam spot in mm (width at half brightness). 0.30 / 0.45 is a typical 15-inch PC monitor, 0.28 / 0.65 the 1084S; lower both for a sharper tube. |
 | Spot size in the corners | How much larger the spot is in the corners than in the centre (deflection defocus). 1.4 is typical for a PC monitor (dynamic focus kept good ones below 1.5, cheap ones reached 2); the 1084S had static focus, 1.5. |
-| Real size: your screen's height, unit | Draws the tube as large as the monitor in **Monitor size** really was, with black around it, instead of filling your screen. Enter the height of your screen's picture area (measured, in cm, or in inches with unit 1); 0 fills the screen. On a large display this puts the monitor at its real size in front of you. Needs the picture area as tall as the screen (full screen). |
+| Real size: your screen's height, unit | Draws the tube as large as the monitor in **Monitor size** really was, with black (or **Around the tube**) around it, instead of filling your screen. Enter the height of your screen's picture area (measured, in cm, or in inches with unit 1); 0 fills the screen. On a large display this puts the monitor at its real size in front of you. Needs the picture area as tall as the screen (full screen). |
+| Around the tube | What is around the tube: 0 black, 1 the monitor's casing, 2 stars. The casing is as large as the real one, so it shows best with **Real size**: the 1084S's (cabinet 352 × 326 mm) and a mid-90s 15-inch monitor's in beige, TVs in dark plastic. It stands in a dim room, lit by the same room light that reflects on the glass: raise **Room reflection** for a brighter room (it also greys the tube's black, as on the real one); at 0 only the picture lights the bevel next to it. The stars are only decoration. |
 | HDR: paper white, HDR: display peak | Only in the `hdr` presets. Paper white is how bright a full white screen is, display peak the most your display can show. See [HDR](#hdr). |
 
 ### Console timing ids

@@ -52,7 +52,7 @@ AMIGA_PARAMS = [
     "LR_MASK_TYPE", "LR_MASK_STR", "LR_WHITE", "LR_PHOS",
     "LR_CURV_X", "LR_CURV_Y", "LR_CORNER", "LR_GLOW", "LR_GLOW_SIZE", "LR_VIGNETTE", "LR_OVERSCAN", "LR_AMBIENT",
     "LR_MON_SIZE", "LR_MON_PITCH", "LR_MON_SPOT_LO", "LR_MON_SPOT_HI", "LR_MON_CORNER",
-    "LR_SCREEN_H", "LR_SCREEN_UNIT",
+    "LR_SCREEN_H", "LR_SCREEN_UNIT", "LR_BACKDROP",
 ]
 PC_PARAMS = [
     "LR_DBLEND", "LR_SAT", "LR_BRIGHT", "LR_CONTRAST",
@@ -60,7 +60,7 @@ PC_PARAMS = [
     "LR_MASK_TYPE", "LR_MASK_STR", "LR_WHITE", "LR_PHOS",
     "LR_CURV_X", "LR_CURV_Y", "LR_CORNER", "LR_GLOW", "LR_GLOW_SIZE", "LR_VIGNETTE", "LR_OVERSCAN", "LR_AMBIENT",
     "LR_MON_SIZE", "LR_MON_PITCH", "LR_MON_SPOT_LO", "LR_MON_SPOT_HI", "LR_MON_CORNER",
-    "LR_SCREEN_H", "LR_SCREEN_UNIT",
+    "LR_SCREEN_H", "LR_SCREEN_UNIT", "LR_BACKDROP",
 ]
 
 
@@ -98,7 +98,7 @@ TARGETS = {
         out=ROOT / "amiberry" / "lola-retro",
         title="Commodore 1084S",
         emulator="Amiberry",
-        defines=["LR_FIELDS", "LR_NO_FEEDBACK", "LR_FIT_43"],
+        defines=["LR_FIELDS", "LR_NO_FEEDBACK", "LR_FIT_43", "LR_ROWS_UP"],
         params=AMIGA_PARAMS,
         fixed=dict(LR_CONSOLE=6),     # Amiberry only shows Amiga modes
         passes=CHAIN[:5] + FIELDS + [CRT, CHAIN[6]],
