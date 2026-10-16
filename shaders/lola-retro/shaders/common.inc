@@ -58,6 +58,8 @@ layout(push_constant) uniform Push
 #pragma parameter LR_MON_SPOT_LO "Spot size in dark areas (mm)" 0.30 0.10 1.00 0.01
 #pragma parameter LR_MON_SPOT_HI "Spot size on white (mm)" 0.45 0.15 1.50 0.01
 #pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.4 1.0 2.5 0.05
+#pragma parameter LR_SCREEN_H "Real size: your screen's height (0 = fill the screen)" 0.0 0.0 100.0 0.5
+#pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0.0 0.0 1.0 1.0
 
 layout(std140, set = 0, binding = 0) uniform UBO
 {
@@ -107,6 +109,8 @@ layout(std140, set = 0, binding = 0) uniform UBO
     float LR_MON_SPOT_LO;
     float LR_MON_SPOT_HI;
     float LR_MON_CORNER;
+    float LR_SCREEN_H;
+    float LR_SCREEN_UNIT;
 #ifdef LR_HDR
     float LR_HDR_OUT;
     float LR_NITS_WHITE;

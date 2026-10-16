@@ -27,11 +27,12 @@ The defaults are right. What matters:
 | Shader for RTG modes | none | RTG screens are graphics card modes; a 15 kHz monitor could not show them. |
 
 To fill more of the screen, raise **Overscan** in the shader parameters (like turning up the monitor's
-width and height).
+width and height). To see the monitor at its real size on a large display instead, enter your screen's
+height under **Real size** (in cm, or in inches with unit 1), in full screen.
 
 ## Parameters
 
-**Filter → Shader Parameters...** lists 25 of them, each once. They mean the same as in RetroArch
+**Filter → Shader Parameters...** lists 27 of them, each once. They mean the same as in RetroArch
 (see the [shader pack's README](https://github.com/zoran123456/lola-retro/blob/main/shaders/lola-retro/README.md)); **Reset to Shader Defaults** returns to
 the 1084S. Fixed in this version: the cable (RGB), the console timing (Amiga) and the tube described in
 millimetres.

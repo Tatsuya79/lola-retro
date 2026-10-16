@@ -19,8 +19,8 @@
 #pragma parameter LR_MASK_STR "Mask strength" 0.5 0 1 0.01
 #pragma parameter LR_WHITE "White point (K)" 6500 6500 9300 100
 #pragma parameter LR_PHOS "Phosphors (0 auto, 1 sRGB, 2 SMPTE-C, 3 EBU, 4 Japanese P22)" 3 0 4 1
-#pragma parameter LR_CURV_X "Curvature horizontal" 0.05 0 0.15 0.005
-#pragma parameter LR_CURV_Y "Curvature vertical" 0.06 0 0.15 0.005
+#pragma parameter LR_CURV_X "Curvature horizontal" 0.035 0 0.15 0.005
+#pragma parameter LR_CURV_Y "Curvature vertical" 0.045 0 0.15 0.005
 #pragma parameter LR_CORNER "Rounded corners" 0.045 0 0.1 0.005
 #pragma parameter LR_GLOW "Glass glow" 0.06 0 0.4 0.01
 #pragma parameter LR_GLOW_SIZE "Glass glow size" 0.5 0.2 1.5 0.05
@@ -32,6 +32,8 @@
 #pragma parameter LR_MON_SPOT_LO "Spot size in dark areas (mm)" 0.28 0.1 1 0.01
 #pragma parameter LR_MON_SPOT_HI "Spot size on white (mm)" 0.65 0.15 1.5 0.01
 #pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.5 1 2.5 0.05
+#pragma parameter LR_SCREEN_H "Real size: your screen's height (0 = fill the screen)" 0 0 100 0.5
+#pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0 0 1 1
 
 uniform vec2 TextureSize;       // Source: the previous pass (the frame for the first pass)
 uniform vec2 OrigTextureSize;   // Original: the emulator's frame
@@ -75,6 +77,8 @@ uniform float LR_MON_PITCH;
 uniform float LR_MON_SPOT_LO;
 uniform float LR_MON_SPOT_HI;
 uniform float LR_MON_CORNER;
+uniform float LR_SCREEN_H;
+uniform float LR_SCREEN_UNIT;
 
 // Lola Retro - pass 1: console video encoder.
 // RGB -> YUV, chroma band-limited and QAM-modulated onto the colour subcarrier.
@@ -502,7 +506,7 @@ void lr_main()
 // The adjustable values go to the later passes: texel k of the first row, blue channel.
 float lr_param(int k)
 {
-    float p[25] = float[25](LR_NORM, LR_DBLEND, LR_SAT, LR_BRIGHT, LR_CONTRAST, LR_STEADY, LR_GAMMA, LR_CONV, LR_MASK_TYPE, LR_MASK_STR, LR_WHITE, LR_PHOS, LR_CURV_X, LR_CURV_Y, LR_CORNER, LR_GLOW, LR_GLOW_SIZE, LR_VIGNETTE, LR_OVERSCAN, LR_AMBIENT, LR_MON_SIZE, LR_MON_PITCH, LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER);
+    float p[27] = float[27](LR_NORM, LR_DBLEND, LR_SAT, LR_BRIGHT, LR_CONTRAST, LR_STEADY, LR_GAMMA, LR_CONV, LR_MASK_TYPE, LR_MASK_STR, LR_WHITE, LR_PHOS, LR_CURV_X, LR_CURV_Y, LR_CORNER, LR_GLOW, LR_GLOW_SIZE, LR_VIGNETTE, LR_OVERSCAN, LR_AMBIENT, LR_MON_SIZE, LR_MON_PITCH, LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER, LR_SCREEN_H, LR_SCREEN_UNIT);
     return p[k];
 }
 
@@ -510,6 +514,6 @@ void main()
 {
     lr_main();
     ivec2 q = ivec2(gl_FragCoord.xy);
-    if (q.y == 0 && q.x < 25) FragColor.b = lr_param(q.x);
+    if (q.y == 0 && q.x < 27) FragColor.b = lr_param(q.x);
 }
 #endif

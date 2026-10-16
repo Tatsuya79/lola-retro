@@ -170,6 +170,16 @@ void main()
     tubePx *= fit;
     px /= fit.x;
 #endif
+    // real size: the tube as large as the monitor it describes (Monitor size), on a screen whose
+    // height is given; the picture area must be as tall as the screen (full screen)
+    if (global.LR_SCREEN_H > 0.0)
+    {
+        float screenMM = global.LR_SCREEN_H * (global.LR_SCREEN_UNIT > 0.5 ? 25.4 : 10.0);
+        float s = min(params.OutputSize.y * monTubeMM().y / (screenMM * tubePx.y), 1.0);
+        tc = (tc - 0.5) / s + 0.5;
+        tubePx *= s;
+        px /= s;
+    }
     vec2 c = tc * 2.0 - 1.0;
     c *= 1.0 + vec2(global.LR_CURV_X, global.LR_CURV_Y) * (c.yx * c.yx);
     float corner = global.LR_CORNER;

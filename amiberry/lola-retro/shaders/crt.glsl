@@ -44,6 +44,8 @@ float LR_MON_PITCH;
 float LR_MON_SPOT_LO;
 float LR_MON_SPOT_HI;
 float LR_MON_CORNER;
+float LR_SCREEN_H;
+float LR_SCREEN_UNIT;
 
 // Lola Retro - pass 6 for SDR displays. The pass itself is in crt.inc.
 
@@ -370,7 +372,7 @@ void lr_main()
     if (vPhos > 1.5) vWhite = inverse(phosphorMatrix(vPhos)) * vWhite;
 }
 
-flat out vec4 lrParams[5];
+flat out vec4 lrParams[6];
 
 void main()
 {
@@ -394,11 +396,14 @@ void main()
     LR_MON_SPOT_LO = texelFetch(LR_Signal, ivec2(22, 0), 0).b;
     LR_MON_SPOT_HI = texelFetch(LR_Signal, ivec2(23, 0), 0).b;
     LR_MON_CORNER = texelFetch(LR_Signal, ivec2(24, 0), 0).b;
+    LR_SCREEN_H = texelFetch(LR_Signal, ivec2(25, 0), 0).b;
+    LR_SCREEN_UNIT = texelFetch(LR_Signal, ivec2(26, 0), 0).b;
     lrParams[0] = vec4(LR_NORM, LR_STEADY, LR_CONV, LR_MASK_TYPE);
     lrParams[1] = vec4(LR_MASK_STR, LR_WHITE, LR_PHOS, LR_CURV_X);
     lrParams[2] = vec4(LR_CURV_Y, LR_CORNER, LR_GLOW, LR_VIGNETTE);
     lrParams[3] = vec4(LR_OVERSCAN, LR_AMBIENT, LR_MON_SIZE, LR_MON_PITCH);
-    lrParams[4] = vec4(LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER, 0.0);
+    lrParams[4] = vec4(LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER, LR_SCREEN_H);
+    lrParams[5] = vec4(LR_SCREEN_UNIT, 0.0, 0.0, 0.0);
     lr_main();
 }
 
@@ -495,6 +500,16 @@ void lr_main()
     tc = (tc - 0.5) / fit + 0.5;
     tubePx *= fit;
     px /= fit.x;
+    // real size: the tube as large as the monitor it describes (Monitor size), on a screen whose
+    // height is given; the picture area must be as tall as the screen (full screen)
+    if (LR_SCREEN_H > 0.0)
+    {
+        float screenMM = LR_SCREEN_H * (LR_SCREEN_UNIT > 0.5 ? 25.4 : 10.0);
+        float s = min(LR_OutputSize.y * monTubeMM().y / (screenMM * tubePx.y), 1.0);
+        tc = (tc - 0.5) / s + 0.5;
+        tubePx *= s;
+        px /= s;
+    }
     vec2 c = tc * 2.0 - 1.0;
     c *= 1.0 + vec2(LR_CURV_X, LR_CURV_Y) * (c.yx * c.yx);
     float corner = LR_CORNER;
@@ -614,7 +629,7 @@ void lr_main()
     FragColor = vec4(col, 1.0);
 }
 
-flat in vec4 lrParams[5];
+flat in vec4 lrParams[6];
 
 void main()
 {
@@ -637,6 +652,8 @@ void main()
     LR_MON_SPOT_LO = lrParams[4].x;
     LR_MON_SPOT_HI = lrParams[4].y;
     LR_MON_CORNER = lrParams[4].z;
+    LR_SCREEN_H = lrParams[4].w;
+    LR_SCREEN_UNIT = lrParams[5].x;
     lr_main();
 }
 #endif

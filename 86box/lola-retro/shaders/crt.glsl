@@ -44,6 +44,8 @@ uniform float LR_MON_PITCH;
 uniform float LR_MON_SPOT_LO;
 uniform float LR_MON_SPOT_HI;
 uniform float LR_MON_CORNER;
+uniform float LR_SCREEN_H;
+uniform float LR_SCREEN_UNIT;
 
 // Lola Retro - pass 6 for SDR displays. The pass itself is in crt.inc.
 
@@ -491,6 +493,16 @@ void lr_main()
     tc = (tc - 0.5) / fit + 0.5;
     tubePx *= fit;
     px /= fit.x;
+    // real size: the tube as large as the monitor it describes (Monitor size), on a screen whose
+    // height is given; the picture area must be as tall as the screen (full screen)
+    if (LR_SCREEN_H > 0.0)
+    {
+        float screenMM = LR_SCREEN_H * (LR_SCREEN_UNIT > 0.5 ? 25.4 : 10.0);
+        float s = min(LR_OutputSize.y * monTubeMM().y / (screenMM * tubePx.y), 1.0);
+        tc = (tc - 0.5) / s + 0.5;
+        tubePx *= s;
+        px /= s;
+    }
     vec2 c = tc * 2.0 - 1.0;
     c *= 1.0 + vec2(LR_CURV_X, LR_CURV_Y) * (c.yx * c.yx);
     float corner = LR_CORNER;

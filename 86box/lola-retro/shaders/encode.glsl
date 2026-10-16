@@ -30,6 +30,8 @@
 #pragma parameter LR_MON_SPOT_LO "Spot size in dark areas (mm)" 0.3 0.1 1 0.01
 #pragma parameter LR_MON_SPOT_HI "Spot size on white (mm)" 0.45 0.15 1.5 0.01
 #pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.4 1 2.5 0.05
+#pragma parameter LR_SCREEN_H "Real size: your screen's height (0 = fill the screen)" 0 0 100 0.5
+#pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0 0 1 1
 
 uniform vec2 InputSize;         // the previous pass's picture (the frame for the first pass)
 uniform vec2 TextureSize;       // its texture, rounded up to a power of two
@@ -73,6 +75,8 @@ uniform float LR_MON_PITCH;
 uniform float LR_MON_SPOT_LO;
 uniform float LR_MON_SPOT_HI;
 uniform float LR_MON_CORNER;
+uniform float LR_SCREEN_H;
+uniform float LR_SCREEN_UNIT;
 
 // Lola Retro - pass 1: console video encoder.
 // RGB -> YUV, chroma band-limited and QAM-modulated onto the colour subcarrier.
