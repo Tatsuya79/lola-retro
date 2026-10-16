@@ -284,11 +284,12 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     vec3 albedo = amiga ? vec3(0.60, 0.56, 0.44) : pc ? vec3(0.66, 0.57, 0.33) : vec3(0.035, 0.035, 0.038);
 
     // the light: the room's (Room light: 1 a dim room with warm lamps, 20 daylight, whiter and
-    // more even), brightest near the monitor; in space a faint cold light
+    // more even), brightest near the monitor. In space as much light as Room light gives, white
+    // like sunlight and even, so the monitor shows in front of the stars.
     float day = smoothstep(1.0, 20.0, global.LR_ROOM);
-    float near = mix(1.0 / (1.0 + dot(p, p) / (260.0 * 260.0)), 1.0, 0.6 * day);
-    vec3 light = inSpace ? vec3(0.005, 0.0055, 0.007)
-               : mix(vec3(1.0, 0.93, 0.82), vec3(1.0), day) * (0.0167 * global.LR_ROOM * near);
+    float near = mix(1.0 / (1.0 + dot(p, p) / (260.0 * 260.0)), 1.0, inSpace ? 1.0 : 0.6 * day);
+    vec3 light = (inSpace ? vec3(0.96, 0.98, 1.0) : mix(vec3(1.0, 0.93, 0.82), vec3(1.0), day))
+               * (0.0167 * global.LR_ROOM * near);
 
     vec2 inner = 0.5 * tube;
     float d = dist * mix(1.0, tubePx.x / tubePx.y, smoothstep(-0.05, 0.05, qq.x - qq.y)) * 0.5 * tube.y;   // mm from the glass
