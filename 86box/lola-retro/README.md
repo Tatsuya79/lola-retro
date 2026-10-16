@@ -49,7 +49,7 @@ as RetroArch's 320×200.
 
 ## Parameters
 
-**View → Renderer options… → Configure** lists 27 of them, for each preset separately. They mean the same as in RetroArch (see the
+**View → Renderer options… → Configure** lists 28 of them, for each preset separately. They mean the same as in RetroArch (see the
 [shader pack's README](https://github.com/zoran123456/lola-retro/blob/main/shaders/lola-retro/README.md));
 **Reset** returns to the preset. The rest (cable, console timing, the TV controls) is fixed at the preset's values.
 To fill more of the screen, raise the shader's **Overscan** (like turning up the monitor's width and height).
@@ -57,7 +57,8 @@ To see the monitor at its real size on a large display instead, enter your scree
 **Real size** (in cm, or in inches with unit 1), in full screen. **Around the tube** then puts the
 monitor around it, as large as the real one: in a room (1) or floating in space (2). With
 **View → Fullscreen stretch mode → Full screen stretch** it fills the whole screen (the tube stays 4:3).
-**Room light** sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight.
+**Room light** sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight, and **Casing sheen**
+how much the plastic reflects it (0 matte, 0.5 as real plastic, 1 glossy).
 
 ## Differences from the RetroArch version
 

@@ -171,15 +171,31 @@ vec2 boxOut(vec2 p, vec2 b, float r)
 // A surface turned by phi radians from facing the viewer, toward dir (z toward the viewer)
 vec3 tilt(vec2 dir, float phi) { return vec3(dir * sin(phi), cos(phi)); }
 
-// Plastic with a satin finish, lit by the room: light from above, a little from the right and
-// in front (as in the photos of the real monitors), plus some from the rest of the room (1 on a
-// surface facing the viewer), and a faint sheen. occ: how much of the room's light reaches it.
-vec3 plastic(vec3 albedo, vec3 n, vec3 light, float occ, float sheen)
+// Plastic lit by the room. Diffuse: light from above, a little from the right and in front (as in
+// the photos of the real monitors), plus some from the rest of the room; 1 on a surface facing
+// the viewer. Sheen (gloss 0.5: plastic as it is, 4% reflection head-on and more at grazing angles;
+// 0 none, 1 twice that and sharper), seen from 60 cm in front of the tube: the room reflected,
+// blurred (a light ceiling above, a darker desk and floor below, so faces and edges turned up look
+// lighter), and the ceiling lamp, 1.2 m above the monitor, in front of it and a little to the
+// right, as a soft highlight. P: position in mm (y up, z toward the viewer), n: which way the
+// surface faces, occ: how much of the room's light reaches it.
+vec3 plastic(vec3 albedo, vec3 n, vec3 P, vec3 light, float occ, float gloss)
 {
     const vec3 L = vec3(0.3, 0.45, 0.84);
     float diffuse = 0.45 + 0.55 * max(dot(n, L), 0.0) / 0.84;
-    float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 10.0);
-    return light * occ * (albedo * diffuse + sheen * spec);
+    vec3 col = albedo * diffuse;
+    if (gloss > 0.0)
+    {
+        vec3 v = normalize(vec3(0.0, 0.0, 600.0) - P);
+        vec3 r = reflect(-v, n);
+        float F = 0.04 + 0.96 * pow(1.0 - max(dot(v, n), 0.0), 5.0);
+        float room = 0.45 * (0.4 + 2.3 * smoothstep(-0.3, 0.7, r.y));
+        vec3 l = normalize(vec3(250.0, 1200.0, 900.0) - P);
+        float s = mix(12.0, 80.0, gloss);
+        float lamp = 0.55 / 0.84 * max(dot(n, l), 0.0) * (s + 8.0) / 8.0 * pow(max(dot(n, normalize(l + v)), 0.0), s);
+        col += 2.0 * gloss * F * (room + lamp);
+    }
+    return light * occ * col;
 }
 
 // Signed distance to a pill (a horizontal capsule): straight part 2h long, radius r
@@ -314,7 +330,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     vec3 alb = albedo * mix(1.0, 0.92, rec);
     if (!tv)             // the plastic has aged a little unevenly
         alb *= 1.0 - (pc ? 0.06 : 0.03) * valueNoise(p / 30.0 + 7.0);
-    float sheen = tv ? 0.02 : pc ? 0.06 : 0.05;
+    float gloss = global.LR_SHEEN;
     alb = mix(alb, vec3(0.02), 1.0 - smoothstep(mw - aa, mw + aa, d));
 
     vec3 lamp = vec3(0.0);                                        // the power light
@@ -333,7 +349,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
             float rim = on * smoothstep(-1.5 - aa, -1.5 + aa, pd);
             n = normalize(mix(n, tilt(pdir, 0.6), rim));
             alb = mix(alb, mix(vec3(0.86, 0.84, 0.79), vec3(0.55, 0.55, 0.56), rim), on);
-            sheen = mix(sheen, 0.15, on);
+            gloss = mix(gloss, min(gloss + 0.3, 1.0), on);   // the plaque is glossier
             occ *= 1.0 - 0.35 * (1.0 - on) * (1.0 - smoothstep(0.0, 1.5, pd)) * max(-pdir.y, 0.0);   // its shadow below
         }
         // grime: small brown specks in a patch on the chin, right of the middle
@@ -382,7 +398,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
             }
             float socc = mix(0.7, 1.0, smoothstep(5.0, 2.5, sp.y))    // in the shadow of the front above
                        * (1.0 - 0.6 * seam);
-            stripCol = plastic(albedo * 0.97, tilt(sdir, sphi), light, socc, 0.05);
+            stripCol = plastic(albedo * 0.97, tilt(sdir, sphi), vec3(p, 0.0), light, socc, global.LR_SHEEN);
             float ld = roundBox(sp - vec2(70.0, -0.5), vec2(1.2, 0.6), 0.3);
             lamp += vec3(0.12, 1.0, 0.2) * (0.6 * (1.0 - smoothstep(-aa, aa, ld)) + 0.03 * exp(-0.5 * max(ld, 0.0) * max(ld, 0.0) / 9.0)) * strip;
         }
@@ -406,7 +422,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
             + 0.25 * textureLod(LR_Glow, clamp(edge + along, 0.0, 1.0), 0.0).rgb;
     vec3 pic = gl * vWhite * 0.035 * exp(-d / 6.0) * mix(0.1, 1.0, rec);
 
-    vec3 casing = plastic(alb, n, light, occ, sheen) + alb * pic;
+    vec3 casing = plastic(alb, n, vec3(p, 0.0), light, occ, gloss) + alb * pic;
     vec3 behind = inSpace ? space((vTexCoord - 0.5) * params.OutputSize.xy * params.OutputSize.w,
                                   float(params.FrameCount % 1000000u) / 60.0, params.OutputSize.w)
                           : vec3(0.20, 0.195, 0.18) * light;   // the wall, further from the light
