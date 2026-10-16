@@ -29,11 +29,12 @@ The defaults are right. What matters:
 To fill more of the screen, raise **Overscan** in the shader parameters (like turning up the monitor's
 width and height). To see the monitor at its real size on a large display instead, enter your screen's
 height under **Real size** (in cm, or in inches with unit 1), in full screen. **Around the tube** then
-puts the 1084S's casing around it (1), as large as the real one, or stars (2) instead of black.
+puts the monitor around it, as large as the real one: in a room (1) or floating in space (2). **Room light**
+sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight.
 
 ## Parameters
 
-**Filter → Shader Parameters...** lists 28 of them, each once. They mean the same as in RetroArch
+**Filter → Shader Parameters...** lists 29 of them, each once. They mean the same as in RetroArch
 (see the [shader pack's README](https://github.com/zoran123456/lola-retro/blob/main/shaders/lola-retro/README.md)); **Reset to Shader Defaults** returns to
 the 1084S. Fixed in this version: the cable (RGB), the console timing (Amiga) and the tube described in
 millimetres.

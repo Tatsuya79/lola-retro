@@ -35,7 +35,8 @@
 #pragma parameter LR_MON_CORNER "Spot size in the corners (x centre)" 1.5 1 2.5 0.05
 #pragma parameter LR_SCREEN_H "Real size: your screen's height (0 = fill the screen)" 0 0 100 0.5
 #pragma parameter LR_SCREEN_UNIT "Real size: unit of that height (0 cm, 1 inch)" 0 0 1 1
-#pragma parameter LR_BACKDROP "Around the tube (0 black, 1 monitor casing, 2 stars)" 0 0 2 1
+#pragma parameter LR_BACKDROP "Around the tube (0 black, 1 room, 2 space)" 0 0 2 1
+#pragma parameter LR_ROOM "Room light (1 dim room, 3 lit room, 20 daylight)" 1 0 30 0.5
 
 uniform vec2 TextureSize;       // Source: the previous pass (the frame for the first pass)
 uniform vec2 OrigTextureSize;   // Original: the emulator's frame
@@ -82,6 +83,7 @@ uniform float LR_MON_CORNER;
 uniform float LR_SCREEN_H;
 uniform float LR_SCREEN_UNIT;
 uniform float LR_BACKDROP;
+uniform float LR_ROOM;
 
 // Lola Retro - pass 1: console video encoder.
 // RGB -> YUV, chroma band-limited and QAM-modulated onto the colour subcarrier.
@@ -509,7 +511,7 @@ void lr_main()
 // The adjustable values go to the later passes: texel k of the first row, blue channel.
 float lr_param(int k)
 {
-    float p[28] = float[28](LR_NORM, LR_DBLEND, LR_SAT, LR_BRIGHT, LR_CONTRAST, LR_STEADY, LR_GAMMA, LR_CONV, LR_MASK_TYPE, LR_MASK_STR, LR_WHITE, LR_PHOS, LR_CURV_X, LR_CURV_Y, LR_CORNER, LR_GLOW, LR_GLOW_SIZE, LR_VIGNETTE, LR_OVERSCAN, LR_AMBIENT, LR_MON_SIZE, LR_MON_PITCH, LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER, LR_SCREEN_H, LR_SCREEN_UNIT, LR_BACKDROP);
+    float p[29] = float[29](LR_NORM, LR_DBLEND, LR_SAT, LR_BRIGHT, LR_CONTRAST, LR_STEADY, LR_GAMMA, LR_CONV, LR_MASK_TYPE, LR_MASK_STR, LR_WHITE, LR_PHOS, LR_CURV_X, LR_CURV_Y, LR_CORNER, LR_GLOW, LR_GLOW_SIZE, LR_VIGNETTE, LR_OVERSCAN, LR_AMBIENT, LR_MON_SIZE, LR_MON_PITCH, LR_MON_SPOT_LO, LR_MON_SPOT_HI, LR_MON_CORNER, LR_SCREEN_H, LR_SCREEN_UNIT, LR_BACKDROP, LR_ROOM);
     return p[k];
 }
 
@@ -517,6 +519,6 @@ void main()
 {
     lr_main();
     ivec2 q = ivec2(gl_FragCoord.xy);
-    if (q.y == 0 && q.x < 28) FragColor.b = lr_param(q.x);
+    if (q.y == 0 && q.x < 29) FragColor.b = lr_param(q.x);
 }
 #endif
