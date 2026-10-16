@@ -655,7 +655,7 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
               * (1.0 - 0.6 * exp(-0.5 * (s + sh) * (s + sh) / max(0.16, aa * aa)));
     vec3 alb = albedo * mix(1.0, 0.92, rec);
     if (!tv)             // the plastic has aged a little unevenly
-        alb *= 1.0 - (pc ? 0.06 : 0.03) * valueNoise(p / 30.0 + 7.0);
+        alb *= 1.0 - 0.03 * valueNoise(p / 30.0 + 7.0);
     float gloss = 0.5;
     alb = mix(alb, vec3(0.02), 1.0 - smoothstep(mw - aa, mw + aa, d));
 
@@ -678,18 +678,6 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
             gloss = mix(gloss, min(gloss + 0.3, 1.0), on);   // the plaque is glossier
             occ *= 1.0 - 0.35 * (1.0 - on) * (1.0 - smoothstep(0.0, 1.5, pd)) * max(-pdir.y, 0.0);   // its shadow below
         }
-        // grime: small brown specks in a patch on the chin, right of the middle
-        float blob = exp(-pow((p.x - 0.12 * tube.x) / (0.14 * tube.x), 2.0) - pow((p.y + inner.y + rw + 10.0) / 9.0, 2.0));
-        vec2 g = p / 0.8, gi = floor(g);
-        float gh = hash13(vec3(gi, 31.0));
-        if (gh > 1.0 - 0.3 * blob)
-        {
-            vec2 gc = gi + 0.25 + 0.5 * vec2(hash13(vec3(gi, 32.0)), hash13(vec3(gi, 33.0)));
-            float gr = 0.15 + 0.2 * fract(gh * 17.0);
-            float cov = clamp((gr - length(g - gc) * 0.8) / aa + 0.5, 0.0, 1.0) * min(1.0, 2.0 * gr / aa);
-            alb *= mix(vec3(1.0), vec3(0.6, 0.52, 0.42), cov);
-        }
-        alb *= 1.0 - 0.08 * blob * valueNoise(p / 3.0 + 3.0);   // and faint smudges around them
 
         // the control strip, a separate part under the front: a recessed panel in the middle,
         // the power light and two buttons on the right, seams between the parts
