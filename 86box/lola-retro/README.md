@@ -2,9 +2,10 @@
 
 The PC monitor (VGA) presets of [Lola Retro](https://github.com/zoran123456/lola-retro) for the PC emulator
 [86Box](https://86box.net). It is the RetroArch shader converted to GLSL, and it gives the same picture: a
-typical mid-90s 15-inch monitor described the way its spec sheet would (14-inch picture, 0.28 mm dot mask,
-a beam spot of 0.30–0.45 mm), so every video mode looks as it did on that one tube. 320×200 games show
-chunky pixels with fine lines, 640×480 is sharp, 1024×768 a little soft.
+mid-90s 15-inch monitor described the way its spec sheet would (14-inch picture, dot mask pitch, beam spot
+size), so every video mode looks as it did on that one tube. The basic preset is an average monitor: 320×200
+games show chunky pixels with fine lines, 640×480 is sharp, 1024×768 a little soft. Four more presets are
+better monitors, up to one sharper than any real tube.
 
 ![Windows 98 in 86Box with the premium PC monitor preset](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/86box-win98.jpg)
 
@@ -61,7 +62,7 @@ To fill more of the screen, raise the shader's **Overscan** (like turning up the
 
 Checked against 86Box's source with a test renderer that runs the preset the way 86Box does
 (`tools/86box-preview.py`): in text mode, 640×350, 640×400, 640×480, 800×600 and 1024×768 the picture matches
-the RetroArch version within 2/255 per pixel. Not yet tried in 86Box itself; reports are welcome.
+the RetroArch version within 2/255 per pixel. In use in 86Box on macOS; reports from other systems are welcome.
 
 ## For developers
 

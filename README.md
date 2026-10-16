@@ -1,6 +1,7 @@
 # Lola Retro
 
-**A CRT shader for RetroArch that simulates the whole analog chain, not just scanlines.**
+**A CRT shader that simulates the whole analog chain, not just scanlines. For RetroArch, with versions for
+Amiberry (Amiga) and 86Box (PC).**
 
 `console video encoder → cable → TV decoder → electron beam → phosphor mask → glass`
 
@@ -26,7 +27,7 @@ little rainbow, just as it did on a living-room TV. On RGB you see the stripes t
 | [![Cannon Fodder](https://img.youtube.com/vi/lyLQ_6vd3tI/mqdefault.jpg)](https://www.youtube.com/watch?v=lyLQ_6vd3tI) | **[Cannon Fodder in Amiberry](https://www.youtube.com/watch?v=lyLQ_6vd3tI)**<br>Amiga 1084S preset in Amiberry. |
 | [![Super Stardust](https://img.youtube.com/vi/DgMnenye7sw/mqdefault.jpg)](https://www.youtube.com/watch?v=DgMnenye7sw) | **[Super Stardust (AGA) in Amiberry](https://www.youtube.com/watch?v=DgMnenye7sw)**<br>Amiga 1084S preset in Amiberry. |
 
-## Quick start
+## Quick start (RetroArch)
 
 1. Copy `shaders/lola-retro` into RetroArch's shader folder (**Settings → Directory → Video Shaders** shows where it is).
 2. Start a game, open **Quick Menu → Shaders → Load** and pick `lola-retro/curved/consumer-tv-composite.slangp`.
@@ -35,6 +36,8 @@ little rainbow, just as it did on a living-room TV. On RGB you see the stripes t
 
 Default core settings are fine for most systems. The few that matter are in
 [RECOMMENDED-CORES.md](shaders/lola-retro/RECOMMENDED-CORES.md).
+
+Using Amiberry or 86Box instead? See [Amiberry](#amiberry) and [86Box](#86box) below.
 
 Every preset also comes in a `flat/` version without curvature:
 
@@ -133,9 +136,10 @@ sharper than any real tube and easy on the eyes for long work on the desktop:
 |---|---|
 | ![](docs/consumer-tv-composite.jpg) **Consumer TV (Composite)**<br>Start here. The TV most people had. | ![](docs/consumer-tv-scart-rgb.jpg) **Consumer TV (SCART RGB)**<br>Same TV, clean picture. |
 | ![](docs/trinitron-s-video.jpg) **Trinitron (S-Video)**<br>PS2, GameCube, N64. | ![](docs/old-tv-rf.jpg) **Old TV (RF)**<br>Antenna cable, snow and ghosting. |
-| ![](docs/pc-monitor-vga.jpg) **PC Monitor (VGA)**<br>DOS and Windows 95 games, Dreamcast VGA. | ![](docs/amiga-1084s.jpg) **Amiga 1084S**<br>Amiga and 15 kHz arcade. |
+| ![](docs/pc-monitor-vga.jpg) **PC Monitor (VGA)**<br>DOS and Windows 9x games, Dreamcast VGA. | ![](docs/amiga-1084s.jpg) **Amiga 1084S**<br>Amiga and 15 kHz arcade. |
 
-Also included: **Studio Monitor (RGB)** for the PVM look and **CRT Projector** for 24 kHz arcade games.
+Also included: **Studio Monitor (RGB)** for the PVM look, **CRT Projector** for 24 kHz arcade games, and four
+sharper PC monitors (see [PC monitor, in millimetres](#pc-monitor-in-millimetres)).
 Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola-retro/RECOMMENDED-CORES.md).
 
 ## What is simulated
@@ -151,14 +155,15 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
 - **Phosphor mask.** Aperture grille (with Trinitron damper wires), slot mask, shadow mask, or a projection screen.
 - **Monitors in millimetres.** PC monitors (31 kHz) and the Amiga 1084S use a tube described in millimetres (size,
   mask pitch, beam spot on dark and on white, larger in the corners), so 320×200, 640×480, 800×600 and 1024×768 each
-  look as they did on a 15-inch monitor, and NTSC Amiga games show stronger lines than PAL ones.
+  look as they did on that monitor, and NTSC Amiga games show stronger lines than PAL ones.
 - **Colour of the TV.** US and Japanese TVs demodulate with "red push" (axes and gains from the Sony CXA2025AS
   datasheet), PAL TVs by the standard; phosphors are SMPTE-C, EBU or Japanese P22 instead of sRGB.
-- **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow.
+- **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow
+  (RetroArch only: Amiberry and 86Box have no feedback textures).
 - **Internal resolution.** PS1 and PS2 cores running at 2× and up are read as blocks of one console pixel,
   so the signal stays right and the extra detail only makes edges smoother.
 - **HDR output.** On an HDR display the phosphor dots and scanline centres get the brightness a real tube
-  had, instead of being squeezed under the SDR white level. The `hdr` presets write HDR10 themselves.
+  had, instead of being squeezed under the SDR white level. The `hdr` presets write HDR10 themselves (RetroArch only).
 
 ## Tested against test patterns
 
@@ -193,7 +198,7 @@ Measured on synthetic patterns:
 | Composite at the subcarrier (3.58 MHz) | luma notched out, the energy shows up as colour (the rainbow) |
 | Comb filter and S-Video | no false colour |
 | RGB bandwidth | about 6.5 MHz, like a consumer TV's video amplifier |
-| PC monitor, 320×200 to 1024×768 | spot width, 1-pixel stripe contrast, line structure and brightness within 2% of the physics |
+| PC monitor (`pc-monitor-vga`), 320×200 to 1024×768 | spot width, 1-pixel stripe contrast, line structure and brightness within 2% of the physics |
 | Amiga 1084S | line contrast inside text matched to a photo of a real monitor; NTSC 40%, PAL 27% in the same text |
 
 ## What is in here
@@ -205,13 +210,13 @@ Measured on synthetic patterns:
 | `86box/lola-retro/` | The PC monitor presets converted to GLSL for 86Box. Details in its [README](86box/lola-retro/README.md). |
 | `web/lola-retro.html` | The original WebGL version. Open it in a browser, try test scenes or drop in your own screenshots. |
 | `tools/` | Preset generator, GLSL converter, compile checker and headless preview renderers. |
-| `test-images/` | Native-resolution test frames used for the previews. |
+| `test-images/` | Native-resolution test frames for the preview tools. |
 | `docs/` | Screenshots used in this README. |
 
 ## Tools
 
 ```
-python3 tools/make_presets.py     # regenerate the curved/ and flat/ .slangp files from one table
+python3 tools/make_presets.py     # regenerate the curved/, flat/ and hdr/ .slangp files from one table
 python3 tools/make_glsl.py        # regenerate the Amiberry and 86Box versions (amiberry/, 86box/) from the slang passes
 python3 tools/check_shaders.py    # compile every pass (slang and GLSL) with glslangValidator
 tools/render-preview.sh PRESET IMAGE OUT.png [glcore|vulkan]   # Linux: render a frame in headless RetroArch

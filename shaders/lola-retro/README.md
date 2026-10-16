@@ -137,10 +137,11 @@ millimetres, like a real monitor: viewable size, dot pitch, and the size of the 
 Every video mode follows from the same tube, so 320×200, 640×480, 800×600 and 1024×768 each look the way they
 did on that monitor.
 
-The defaults are a typical mid-90s 15-inch monitor: 14-inch viewable picture, 0.28 mm dot mask, 85 MHz video
+The `pc-monitor-vga` preset is a typical mid-90s 15-inch monitor: 14-inch viewable picture, 0.28 mm dot mask, 85 MHz video
 amplifier, a beam spot of 0.30 mm on dark and 0.45 mm on white, 1.4 times larger in the corners. Monitors were
-built with a spot about 1.2–1.3 times the pixel at their sharpest resolution, and a 15-inch monitor was sharp at
-800×600 and soft at 1024×768; that puts the spot at about 0.45 mm.
+built with a spot about 1.2–1.3 times the pixel at their sharpest resolution, and an average 15-inch monitor was sharp at
+800×600 and soft at 1024×768; that puts the spot at about 0.45 mm. Better monitors had smaller spots, see
+[Better PC monitors](#better-pc-monitors).
 
 What that gives (measured from the shader, centre of the screen, black border as in the preset):
 
@@ -152,8 +153,8 @@ What that gives (measured from the shader, centre of the screen, black border as
 | 1024×768 | 0.26 mm | 9% | 1% / 0% |
 
 So 320×200 shows chunky pixels with fine lines that you see up close and in dark areas, 640×480 is sharp
-with 1-pixel dots still visible, and 1024×768 is soft, as it was on a 15-inch tube (set Monitor size to 17 for
-a 17-inch). The dot mask is too fine to show at 1080p, as it was on the real monitor at normal viewing
+with 1-pixel dots still visible, and 1024×768 is soft, as it was on an average 15-inch tube (for a sharper one use the presets below, or
+set Monitor size to 17 for a 17-inch). The dot mask is too fine to show at 1080p, as it was on the real monitor at normal viewing
 distance; at 4K it shows as a fine texture.
 
 ### Better PC monitors
@@ -232,7 +233,7 @@ Windows (NVIDIA). Direct3D 10/11/12 failed in 1.0 and 1.1; 1.2 fixes the cause (
 without derivatives, which the Direct3D compiler requires inside loops). Metal has not been confirmed yet.
 The HDR output has been checked numerically (the HDR10 signal decodes back to the intended brightness)
 and confirmed on macOS with the Vulkan driver and a DisplayHDR 400 monitor. Reports from other HDR
-displays are welcome.
+displays are welcome. The Amiberry and 86Box versions are in use in Amiberry and 86Box on macOS.
 The PC monitor model was checked against its physics (spot width, stripe contrast, line structure and brightness
 agree within 2% in every mode) and against photos of real VGA monitors; the 1084S against photos of a real 1084S.
 Reports are welcome.

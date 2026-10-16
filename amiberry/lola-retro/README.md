@@ -46,7 +46,7 @@ millimetres.
 
 Checked against Amiberry's source with a test renderer that runs the preset the way Amiberry does
 (`tools/amiberry-preview.py`): on the same games the picture matches the RetroArch version, with the
-brightness within 1%. Not yet tried in Amiberry itself; reports are welcome.
+brightness within 1%. In use in Amiberry on macOS; reports from other systems are welcome.
 
 ## For developers
 
