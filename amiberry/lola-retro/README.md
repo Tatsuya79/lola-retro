@@ -29,7 +29,8 @@ The defaults are right. What matters:
 **Overscan** in the shader parameters is the monitor's width and height: 0.1 leaves about 5 mm of black
 around a 320×256 screen, −0.015 is the factory setting with its wide black borders. To see the monitor at its real size on a large display instead, enter your screen's
 height under **Real size** (in cm, or in inches with unit 1), in full screen. **Around the tube** then
-puts the monitor around it, as large as the real one: in a room (1) or floating in space (2). **Room light**
+puts the monitor around it, as large as the real one: in a room (1), floating in space (2) or in a
+synthwave scene (3). **Room light**
 sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight, and **Screen light on the casing**
 how strongly the screen lights the walls around the glass (1 as on the real monitor).
 
