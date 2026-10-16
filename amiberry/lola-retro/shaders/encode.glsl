@@ -26,7 +26,7 @@
 #pragma parameter LR_GLOW "Glass glow" 0.06 0 0.4 0.01
 #pragma parameter LR_GLOW_SIZE "Glass glow size" 0.5 0.2 1.5 0.05
 #pragma parameter LR_VIGNETTE "Darker edges" 0.25 0 0.7 0.01
-#pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" -0.015 -0.08 0.12 0.005
+#pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" 0.1 -0.08 0.12 0.005
 #pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0 0.03 0.001
 #pragma parameter LR_MON_SIZE "Monitor size (inches)" 14 10 21 1
 #pragma parameter LR_MON_PITCH "Dot pitch (mm)" 0.42 0.2 0.7 0.01

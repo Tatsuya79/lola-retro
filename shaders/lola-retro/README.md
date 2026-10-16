@@ -39,10 +39,10 @@ Every folder has the same 12 presets.
 | `studio-monitor-rgb` | The sharpest picture with strong scanlines (the PVM/BVM look). | Broadcast/studio monitor on RGB, calibrated 6500 K white. |
 | `old-tv-rf` | Nostalgia for the antenna cable. Noisy on purpose. | Old TV on the antenna input. RF snow, ghosting, soft focus, round tube. |
 | `crt-projector` | 24 kHz arcade games such as Daytona USA (Sega Model 2). | Arcade CRT projector (three tubes on a flat screen). No mask, colour fringes, soft. |
-| `pc-monitor-vga` | DOS and Windows 9x games (320×200 up to 1024×768), Dreamcast on the VGA cable. | A typical mid-90s 15-inch PC monitor, described in millimetres (see [PC monitor](#pc-monitor)). 320×200 is drawn twice (400 lines), fine dot mask, black border. |
+| `pc-monitor-vga` | DOS and Windows 9x games (320×200 up to 1024×768), Dreamcast on the VGA cable. | A typical mid-90s 15-inch PC monitor, described in millimetres (see [PC monitor](#pc-monitor)). 320×200 is drawn twice (400 lines), fine dot mask, a thin black border. |
 | `pc-monitor-vga-good`, `-premium`, `-premium-plus` | The same, on a better 15-inch monitor; sharper Windows desktops at 800×600 and 1024×768. | Finer dot mask and a smaller, better focused beam (see [Better PC monitors](#better-pc-monitors)). |
 | `pc-monitor-vga-extreme` | Long work on the Windows desktop. | Sharper than any real 15-inch tube: the gaps between the lines show even at 1024×768. |
-| `amiga-1084s` | Amiga, and 15 kHz arcade games (CPS1/2, Neo Geo MVS). | Commodore 1084S on RGB, built from its service manual (see [Amiga 1084S](#amiga-1084s)). 0.42 mm slot mask, the whole picture with a black border. |
+| `amiga-1084s` | Amiga, and 15 kHz arcade games (CPS1/2, Neo Geo MVS). | Commodore 1084S on RGB, built from its service manual (see [Amiga 1084S](#amiga-1084s)). 0.42 mm slot mask, the picture nearly filling the glass. |
 
 The CRT projector already has a flat screen, so its `curved` version only adds rounded corners.
 
@@ -110,7 +110,7 @@ Every preset only sets parameters, so you can tweak any preset in **Quick Menu �
 | Spot size in dark areas / on white | The beam spot in mm (width at half brightness). 0.30 / 0.45 is a typical 15-inch PC monitor, 0.28 / 0.65 the 1084S; lower both for a sharper tube. |
 | Spot size in the corners | How much larger the spot is in the corners than in the centre (deflection defocus). 1.4 is typical for a PC monitor (dynamic focus kept good ones below 1.5, cheap ones reached 2); the 1084S had static focus, 1.5. |
 | Real size: your screen's height, unit | Draws the tube as large as the monitor in **Monitor size** really was, with black (or **Around the tube**) around it, instead of filling your screen. Enter the height of your screen's picture area (measured, in cm, or in inches with unit 1); 0 fills the screen. On a large display this puts the monitor at its real size in front of you. Needs the picture area as tall as the screen (full screen). |
-| Around the tube | What is around the tube: 0 black, 1 the monitor in a room, 2 the monitor floating in space. The monitor's casing is as large as the real one, so it shows best with **Real size**: grey-beige with mitred bevel corners for `amiga-1084s` (after the 1084S, cabinet 352 × 326 mm, and the M1438S), cream for the PC monitors, dark plastic for TVs, each with its green power light. The bevel that slopes down to the glass is darker at the top and lighter at the bottom, lit from above, and the picture lights it a little. Space is decoration, not a simulation: stars in layers that slowly come closer and drift, over a faint nebula. |
+| Around the tube | What is around the tube: 0 black, 1 the monitor in a room, 2 the monitor floating in space. The casing is measured on photos of real monitors and drawn as large as the real one, so it shows best with **Real size**. `amiga-1084s` gets an Amiga monitor (after the M1438S): warm off-white, a thick flat front, a tunnel with mitred corners down to a thin black mask at the glass, a plain chin with a green power light. The PC presets get a 90s PC monitor (after a Compaq 151FS): aged cream with a little grime, a raised rim around a shallower recess, a blank plaque, and a control strip below with buttons and a green light. TVs get the PC shape in dark plastic. The walls around the glass are darker at the top and lighter at the bottom, lit from above, and the picture lights them a little. Space is decoration, not a simulation: stars in layers that slowly come closer and drift, over a faint nebula. |
 | Room light | How bright the room is: 1 a dim room (warm lamps), 3 a lit room, 20 daylight. It lights the casing and the wall, and sets the reflection on the glass too (Room reflection is how much the tube reflects in a dim room), so in daylight the tube's black turns grey, as on the real one. Lower Room reflection if you want it darker. |
 | HDR: paper white, HDR: display peak | Only in the `hdr` presets. Paper white is how bright a full white screen is, display peak the most your display can show. See [HDR](#hdr). |
 
@@ -142,19 +142,20 @@ Every video mode follows from the same tube, so 320×200, 640×480, 800×600 and
 did on that monitor.
 
 The `pc-monitor-vga` preset is a typical mid-90s 15-inch monitor: 14-inch viewable picture, 0.28 mm dot mask, 85 MHz video
-amplifier, a beam spot of 0.30 mm on dark and 0.45 mm on white, 1.4 times larger in the corners. Monitors were
+amplifier, a beam spot of 0.30 mm on dark and 0.45 mm on white, 1.4 times larger in the corners, a nearly flat
+glass, and the picture filling it up to a thin black border, as owners set it with the monitor's controls. Monitors were
 built with a spot about 1.2–1.3 times the pixel at their sharpest resolution, and an average 15-inch monitor was sharp at
 800×600 and soft at 1024×768; that puts the spot at about 0.45 mm. Better monitors had smaller spots, see
 [Better PC monitors](#better-pc-monitors).
 
-What that gives (measured from the shader, centre of the screen, black border as in the preset):
+What that gives (measured from the shader, centre of the screen, the picture size of the preset):
 
 | Mode | Pixel width | 1-pixel stripes, white on black | Line structure, 30% grey / white |
 |---|---|---|---|
-| 320×200 (drawn as 400 lines) | 0.84 mm | 94% contrast | 41% / 12% |
-| 640×480 | 0.42 mm | 45% | 20% / 3% |
-| 800×600 | 0.34 mm | 25% | 6% / 0% |
-| 1024×768 | 0.26 mm | 9% | 1% / 0% |
+| 320×200 (drawn as 400 lines) | 0.87 mm | 95% contrast | 46% / 7% |
+| 640×480 | 0.44 mm | 49% | 24% / 2% |
+| 800×600 | 0.35 mm | 28% | 7% / 0% |
+| 1024×768 | 0.27 mm | 11% | 1% / 0% |
 
 So 320×200 shows chunky pixels with fine lines that you see up close and in dark areas, 640×480 is sharp
 with 1-pixel dots still visible, and 1024×768 is soft, as it was on an average 15-inch tube (for a sharper one use the presets below, or
@@ -186,9 +187,10 @@ The `amiga-1084s` preset is built from the Commodore 1084S-P1 service manual and
 
 - 14-inch Philips M34EAQ10X tube, 0.42 mm slot mask, 6.5 MHz video amplifier.
 - White set to "D" (D65, 6500 K), European phosphors (EBU) whatever the Amiga sends, PAL or NTSC.
-- Factory geometry: the whole active picture fills the 13-inch face with a thin black border. A 320-pixel
-  Amiga line takes 45 of the 52 µs, so the picture has black borders on all sides, as on the real monitor.
-  Raise Overscan to fill the screen, like turning up the monitor's width and height.
+- Picture size as owners set the monitor up: width and height turned up until a 320×256 screen nearly fills
+  the glass, with about 5 mm of black left around it (Overscan 0.1). At the factory setting (Overscan −0.015)
+  the whole active picture fills the 13-inch face, and a 320-pixel line, 45 of the 52 µs, leaves wide black
+  borders on all sides.
 - The tube is described in mm (beam spot 0.28 mm on dark, 0.65 mm on white), so NTSC games, with 200 lines
   further apart, show stronger lines than PAL games with 256, as on the real monitor. The spot was calibrated
   on a photo of a real monitor: the line contrast inside mid-bright text (39% in the photo) is matched.

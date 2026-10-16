@@ -168,9 +168,26 @@ vec2 boxOut(vec2 p, vec2 b, float r)
     return sign(p) * normalize(max(abs(p) - b + r, 1e-3));
 }
 
-// Light on a surface facing n (z toward the viewer): from above and in front, plus some from
-// the rest of the room. 1 on a surface facing the viewer.
-float lampOn(vec3 n) { return 0.3 + 0.7 * max(dot(n, vec3(0.0, 0.5, 0.866)), 0.0) / 0.866; }
+// A surface turned by phi radians from facing the viewer, toward dir (z toward the viewer)
+vec3 tilt(vec2 dir, float phi) { return vec3(dir * sin(phi), cos(phi)); }
+
+// Plastic with a satin finish, lit by the room: light from above, a little from the right and
+// in front (as in the photos of the real monitors), plus some from the rest of the room (1 on a
+// surface facing the viewer), and a faint sheen. occ: how much of the room's light reaches it.
+vec3 plastic(vec3 albedo, vec3 n, vec3 light, float occ, float sheen)
+{
+    const vec3 L = vec3(0.3, 0.45, 0.84);
+    float diffuse = 0.45 + 0.55 * max(dot(n, L), 0.0) / 0.84;
+    float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 10.0);
+    return light * occ * (albedo * diffuse + sheen * spec);
+}
+
+// Signed distance to a pill (a horizontal capsule): straight part 2h long, radius r
+float pill(vec2 q, float h, float r)
+{
+    q.x = max(abs(q.x) - h, 0.0);
+    return length(q) - r;
+}
 
 // Smooth value noise, 0..1
 float valueNoise(vec2 p)
@@ -235,14 +252,20 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
 #endif
     bool inSpace = global.LR_BACKDROP > 1.5;
 
-    // The monitor's casing, from real ones: the Amiga monitors (1084S cabinet 352 x 326 mm,
-    // M1438S), a 15-inch PC monitor of the 90s, a TV. Front margins around the tube face (side,
-    // top, bottom), the width of the bevel that slopes down to the glass, the plastic.
+    // The casing, measured on photos of real monitors.
+    // Amiga monitor (Commodore M1438S): warm off-white, a thick flat front, a 12.5 mm tunnel with
+    //   mitred corners down to a thin black mask at the glass, a plain chin, a green light.
+    // PC monitor (Compaq 151FS): aged cream, a wide front, a raised rim around a shallower
+    //   recess, a blank plaque on the chin, a control strip below with buttons and a green light.
+    // TV: the PC shape in dark plastic.
+    // Margins from the glass to the outline (side, top, bottom), recess width (with the mask),
+    // mask width, the shell band around the front.
     bool tv = !inMM(vTiming.x);
-    bool amiga = global.LR_MON_MM > 0.5;
-    vec3 m = amiga ? vec3(44.0, 33.0, 95.0) : tv ? vec3(50.0, 40.0, 90.0) : vec3(39.0, 35.0, 75.0);
-    float bw = amiga ? 24.0 : 20.0;
-    vec3 albedo = tv ? vec3(0.035, 0.035, 0.038) : amiga ? vec3(0.50, 0.48, 0.42) : vec3(0.62, 0.56, 0.42);
+    bool amiga = !tv && global.LR_MON_MM > 0.5;
+    bool pc = !tv && !amiga;
+    vec3 m = amiga ? vec3(41.0, 41.0, 48.0) : pc ? vec3(44.0, 46.0, 39.0) : vec3(50.0, 42.0, 80.0);
+    float rw = amiga ? 12.5 : 12.0, mw = 1.2, sh = amiga ? 4.0 : 3.0;
+    vec3 albedo = amiga ? vec3(0.60, 0.56, 0.44) : pc ? vec3(0.66, 0.57, 0.33) : vec3(0.035, 0.035, 0.038);
 
     // the light: the room's (Room light: 1 a dim room with warm lamps, 20 daylight, whiter and
     // more even), brightest near the monitor; in space a faint cold light
@@ -251,44 +274,129 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     vec3 light = inSpace ? vec3(0.005, 0.0055, 0.007)
                : mix(vec3(1.0, 0.93, 0.82), vec3(1.0), day) * (0.0167 * global.LR_ROOM * near);
 
-    // from the glass out: a shadowed slit, the bevel, a rounded lip, the front
     vec2 inner = 0.5 * tube;
     float d = dist * mix(1.0, tubePx.x / tubePx.y, smoothstep(-0.05, 0.05, qq.x - qq.y)) * 0.5 * tube.y;   // mm from the glass
-    float gap = smoothstep(0.0, max(2.0, aa), d);
-    float ob = roundBox(p, inner + bw, amiga ? 8.0 : 14.0);       // < 0 on the bevel
-    vec2 half_ = inner + vec2(m.x, 0.5 * (m.y + m.z));
-    vec2 at = p - vec2(0.0, 0.5 * (m.y - m.z));                   // from the centre of the front
-    float o = roundBox(at, half_, 22.0);                          // < 0 on the front
-    float front = 1.0 - smoothstep(-aa, aa, o);
+    vec2 hs = inner + vec2(m.x, 0.5 * (m.y + m.z));               // half size of the outline
+    vec2 at = p - vec2(0.0, 0.5 * (m.y - m.z));                   // from the centre of the outline
+    float s = roundBox(at, hs, 7.0);                              // < 0 on the casing
+    float u = -roundBox(p, inner + rw, amiga ? 2.0 : 6.0);        // > 0 in the recess
+    float rec = smoothstep(-aa, aa, u);
 
-    // which way the surface faces: the bevel toward the tube (mitred corners on the Amiga
-    // monitors, rounded on the others), the front toward the viewer, rolling over to the sides
-    // in its last 8 mm. The top bevel faces down and gets the least light, the bottom one the most.
-    vec2 nb = boxOut(p, inner, 15.0);
+    // Which way the surface faces. Away from the glass: rounded corners, mitred on the Amiga.
+    vec2 nIn = boxOut(p, inner, 6.0);
     if (amiga)
     {
         vec2 e = abs(p) - inner;
-        nb = normalize(mix(vec2(0.0, sign(p.y)), vec2(sign(p.x), 0.0), smoothstep(-aa, aa, e.x - e.y)));
+        nIn = normalize(mix(vec2(0.0, sign(p.y)), vec2(sign(p.x), 0.0), smoothstep(-aa, aa, e.x - e.y)));
     }
-    float roll = 1.5708 * clamp(1.0 + o / 8.0, 0.0, 1.0);
-    vec3 nFront = vec3(boxOut(at, half_, 22.0) * sin(roll), cos(roll));
-    vec3 n = normalize(mix(vec3(-0.77 * nb, 0.64), nFront, smoothstep(-1.5 - aa, 1.5 + aa, ob)));
-    float shade = lampOn(n);
-
-    // the seam above the front panel with the controls, and the green power light
-    float yb = at.y + half_.y;                                    // mm above the bottom edge
-    if (!tv)
+    float phi;                                                    // < 0 toward the glass, > 0 outward
+    vec2 dir = nIn;
+    if (u > -5.0)
     {
-        float g = yb - 20.0, sw = max(0.5, 0.6 * aa);
-        float span = 1.0 - smoothstep(-aa, aa, abs(p.x) - half_.x + 28.0);
-        shade *= 1.0 - 0.6 * span * exp(-0.5 * g * g / (sw * sw));
-        shade += 0.25 * span * exp(-0.5 * (g + 1.0) * (g + 1.0) / (sw * sw));
+        // a rounded lip, then the walls down to the glass: steep on the Amiga monitor (55 degrees),
+        // shallower on the PC monitor and the TV (45 degrees)
+        phi = (amiga ? -0.96 : -0.79) * smoothstep(-0.6, 1.2, u);
     }
-    float ld = length(vec2(at.x - half_.x + 30.0, yb - 10.0));
-    vec3 led = vec3(0.12, 1.0, 0.2) * (0.5 * (1.0 - smoothstep(1.5 - aa, 1.5 + aa, ld)) + 0.02 * exp(-ld * ld / 32.0));
+    else
+    {
+        // the front's edge rolls over to a seam, then the casing's shell rolls away
+        dir = boxOut(at, hs, 7.0);
+        phi = s < -sh ? 0.87 * smoothstep(-sh - 2.0, -sh, s) : mix(0.44, 1.4, smoothstep(-1.5, 0.0, s));
+    }
+    vec3 n = tilt(dir, phi);
+    if (pc)              // the top of the front slopes back a little
+        n = normalize(n + vec3(0.0, 0.25 * smoothstep(inner.y + rw + 12.0, inner.y + m.y - sh, p.y), 0.0));
 
-    // the picture lights the bevel next to it, weakly: its light leaves the glass at a grazing
-    // angle. Three samples along the edge, wider apart further from it.
+    // less of the room's light gets into the recess, least near the glass; the seam is dark;
+    // the mask next to the glass is black
+    float occ = (1.0 - rec * (0.05 + 0.15 * smoothstep(0.0, rw, u)))
+              * (1.0 - 0.6 * exp(-0.5 * (s + sh) * (s + sh) / max(0.16, aa * aa)));
+    vec3 alb = albedo * mix(1.0, 0.92, rec);
+    if (!tv)             // the plastic has aged a little unevenly
+        alb *= 1.0 - (pc ? 0.06 : 0.03) * valueNoise(p / 30.0 + 7.0);
+    float sheen = tv ? 0.02 : pc ? 0.06 : 0.05;
+    alb = mix(alb, vec3(0.02), 1.0 - smoothstep(mw - aa, mw + aa, d));
+
+    vec3 lamp = vec3(0.0);                                        // the power light
+    vec3 stripCol = vec3(0.0);
+    float strip = 0.0;
+    float yb = -inner.y - m.z;                                    // bottom of the outline
+    if (pc)
+    {
+        // a blank pill-shaped plaque on the chin, left: a grey raised rim around a light face
+        vec2 pq = p - vec2(-0.406 * tube.x, -inner.y - rw - 12.0);
+        float pd = pill(pq, 20.5, 7.5);
+        if (pd < 1.5)
+        {
+            vec2 pdir = normalize(vec2(sign(pq.x) * max(abs(pq.x) - 20.5, 0.0), pq.y) + 1e-4);
+            float on = 1.0 - smoothstep(-aa, aa, pd);
+            float rim = on * smoothstep(-1.5 - aa, -1.5 + aa, pd);
+            n = normalize(mix(n, tilt(pdir, 0.6), rim));
+            alb = mix(alb, mix(vec3(0.86, 0.84, 0.79), vec3(0.55, 0.55, 0.56), rim), on);
+            sheen = mix(sheen, 0.15, on);
+            occ *= 1.0 - 0.35 * (1.0 - on) * (1.0 - smoothstep(0.0, 1.5, pd)) * max(-pdir.y, 0.0);   // its shadow below
+        }
+        // grime: small brown specks in a patch on the chin, right of the middle
+        float blob = exp(-pow((p.x - 0.12 * tube.x) / (0.14 * tube.x), 2.0) - pow((p.y + inner.y + rw + 10.0) / 9.0, 2.0));
+        vec2 g = p / 0.8, gi = floor(g);
+        float gh = hash13(vec3(gi, 31.0));
+        if (gh > 1.0 - 0.3 * blob)
+        {
+            vec2 gc = gi + 0.25 + 0.5 * vec2(hash13(vec3(gi, 32.0)), hash13(vec3(gi, 33.0)));
+            float gr = 0.15 + 0.2 * fract(gh * 17.0);
+            float cov = clamp((gr - length(g - gc) * 0.8) / aa + 0.5, 0.0, 1.0) * min(1.0, 2.0 * gr / aa);
+            alb *= mix(vec3(1.0), vec3(0.6, 0.52, 0.42), cov);
+        }
+        alb *= 1.0 - 0.08 * blob * valueNoise(p / 3.0 + 3.0);   // and faint smudges around them
+
+        // the control strip, a separate part under the front: a recessed panel in the middle,
+        // the power light and two buttons on the right, seams between the parts
+        vec2 sp = p - vec2(0.0, yb - 6.0);
+        strip = 1.0 - smoothstep(-aa, aa, roundBox(sp, vec2(110.5, 7.0), 2.0));
+        if (strip > 0.0)
+        {
+            float sphi = 0.0;
+            vec2 sdir = vec2(0.0, 1.0);
+            float pan = roundBox(sp - vec2(8.5, -0.5), vec2(50.5, 4.5), 1.0);
+            if (pan < 0.0)
+            {
+                sdir = boxOut(sp - vec2(8.5, -0.5), vec2(50.5, 4.5), 1.0);
+                sphi = -0.8 * smoothstep(-1.0, 0.0, pan);         // its walls face inward
+            }
+            for (int k = 0; k < 2; k++)
+            {
+                vec2 bc = vec2(k == 0 ? 85.5 : 102.25, -0.5);
+                vec2 bh = vec2(k == 0 ? 7.5 : 7.25, 4.5);
+                float bd = roundBox(sp - bc, bh, 0.8);
+                if (bd < 0.0)
+                {
+                    sdir = boxOut(sp - bc, bh, 0.8);
+                    sphi = 0.6 * smoothstep(-0.8, 0.0, bd);        // bevelled buttons
+                }
+            }
+            float seam = 0.0;
+            for (int k = 0; k < 4; k++)
+            {
+                float x0 = k == 0 ? -42.0 : k == 1 ? 59.0 : k == 2 ? 77.0 : 94.0;
+                seam = max(seam, exp(-0.5 * (sp.x - x0) * (sp.x - x0) / max(0.09, aa * aa)));
+            }
+            float socc = mix(0.7, 1.0, smoothstep(5.0, 2.5, sp.y))    // in the shadow of the front above
+                       * (1.0 - 0.6 * seam);
+            stripCol = plastic(albedo * 0.97, tilt(sdir, sphi), light, socc, 0.05);
+            float ld = roundBox(sp - vec2(70.0, -0.5), vec2(1.2, 0.6), 0.3);
+            lamp += vec3(0.12, 1.0, 0.2) * (0.6 * (1.0 - smoothstep(-aa, aa, ld)) + 0.03 * exp(-0.5 * max(ld, 0.0) * max(ld, 0.0) / 9.0)) * strip;
+        }
+    }
+    else
+    {
+        // the power light: the Amiga's under the front, right of the middle; the TV's on its chin
+        vec2 lp = amiga ? vec2(0.356 * tube.x, yb + 2.2) : vec2(inner.x + m.x - 30.0, yb + 14.0);
+        float ld = roundBox(p - lp, vec2(1.3, 0.6), 0.4);
+        lamp += vec3(0.12, 1.0, 0.2) * (0.6 * (1.0 - smoothstep(-aa, aa, ld)) + 0.03 * exp(-0.5 * max(ld, 0.0) * max(ld, 0.0) / 9.0));
+    }
+
+    // the picture lights the walls of the recess next to it, weakly: its light leaves the glass
+    // at a grazing angle. Three samples along the edge, wider apart further from it.
     float ov = 1.0 - global.LR_OVERSCAN;
     vec2 edge = clamp(c * 0.5 * ov + 0.5, 0.0, 1.0);
     vec2 nt = boxOut((tc - 0.5) * tube, inner, 15.0);             // in texture orientation
@@ -296,13 +404,14 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
     vec3 gl = 0.5 * textureLod(LR_Glow, edge, 0.0).rgb
             + 0.25 * textureLod(LR_Glow, clamp(edge - along, 0.0, 1.0), 0.0).rgb
             + 0.25 * textureLod(LR_Glow, clamp(edge + along, 0.0, 1.0), 0.0).rgb;
-    vec3 pic = gl * vWhite * 0.035 * exp(-d / 6.0) * mix(0.1, 1.0, 1.0 - smoothstep(-aa, aa, ob));
+    vec3 pic = gl * vWhite * 0.035 * exp(-d / 6.0) * mix(0.1, 1.0, rec);
 
-    vec3 casing = albedo * (light * shade + pic) * gap + led;
+    vec3 casing = plastic(alb, n, light, occ, sheen) + alb * pic;
     vec3 behind = inSpace ? space((vTexCoord - 0.5) * params.OutputSize.xy * params.OutputSize.w,
                                   float(params.FrameCount % 1000000u) / 60.0, params.OutputSize.w)
                           : vec3(0.20, 0.195, 0.18) * light;   // the wall, further from the light
-    return mix(behind, casing, front);
+    behind = mix(behind, stripCol, strip);
+    return mix(behind, casing, 1.0 - smoothstep(-aa, aa, s)) + lamp;
 }
 
 void main()

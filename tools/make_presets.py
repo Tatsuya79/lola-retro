@@ -119,23 +119,27 @@ PRESETS = {
         LR_HFOCUS=0.6, LR_PERSIST=0.05, LR_CONV=0.85, LR_MASK_TYPE=4, LR_MASK_STR=0.4,
         LR_MASK_TRIADS=400, LR_WHITE=7500, LR_CURV_X=0.0, LR_CURV_Y=0.0, LR_GLOW=0.08,
         LR_VIGNETTE=0.45, LR_OVERSCAN=0.02, LR_AMBIENT=0.006),
-    # PC VGA monitor: 31 kHz line doubling, fine dot mask, black border
+    # PC VGA monitor: 31 kHz line doubling, fine dot mask. The picture set up to fill the glass up
+    # to a thin black border (about 2 mm, as owners set it with the monitor's controls); a nearly
+    # flat glass (flat square tube), a little lighter than a TV's.
     "pc-monitor-vga": dict(
         LR_CONSOLE=7, LR_CABLE=3, LR_SHARP=0.0, LR_SAT=1.08, LR_SIG_LO=0.3, LR_SIG_HI=0.5,
         LR_HFOCUS=0.3, LR_PERSIST=0.03, LR_CONV=0.12, LR_MASK_TYPE=3, LR_MASK_STR=0.45,
-        LR_MASK_TRIADS=600, LR_WHITE=9300, LR_CURV_X=0.035, LR_CURV_Y=0.045, LR_GLOW=0.04,
-        LR_VIGNETTE=0.15, LR_OVERSCAN=-0.06, LR_AMBIENT=0.002),
+        LR_MASK_TRIADS=600, LR_WHITE=9300, LR_CURV_X=0.025, LR_CURV_Y=0.03, LR_GLOW=0.04,
+        LR_VIGNETTE=0.15, LR_OVERSCAN=-0.015, LR_AMBIENT=0.003),
     # Commodore 1084S on RGB, described from its service manual (1084S-P1): 14-inch Philips
     # M34EAQ10X tube, 0.42 mm slot mask, 6.5 MHz video amplifier, white set to D (6500 K).
-    # Factory geometry: the whole active picture (260 x 186 mm for the test grid) on a
-    # 264 x 198 mm face, so Amiga lores (45 of 52 us) leaves black borders. EBU phosphors.
+    # EBU phosphors. Picture size as owners set it up: width and height turned up until a
+    # 320 x 256 screen nearly fills the glass (about 5 mm of black around it). The factory setting
+    # (overscan -0.015: the whole active picture, 260 x 186 mm for the test grid, on the
+    # 264 x 198 mm face) left wide black borders around Amiga lores (45 of 52 us).
     # Curvature from photos of real Amiga monitors: the picture edges bow about 1.5% of the
     # picture height near the corners (top and bottom edge averaged, which cancels the camera angle).
     "amiga-1084s": dict(
         LR_CABLE=3, LR_SHARP=0.1, LR_SAT=1.12, LR_SIG_LO=0.2, LR_SIG_HI=0.42, LR_HFOCUS=0.45,
         LR_PERSIST=0.05, LR_CONV=0.25, LR_MASK_TYPE=2, LR_MASK_STR=0.5, LR_MASK_TRIADS=470,
         LR_WHITE=6500, LR_PHOS=3, LR_CURV_X=0.035, LR_CURV_Y=0.045, LR_GLOW=0.06, LR_VIGNETTE=0.25,
-        LR_OVERSCAN=-0.015, LR_AMBIENT=0.002,
+        LR_OVERSCAN=0.1, LR_AMBIENT=0.002,
         LR_MON_MM=1, LR_MON_SIZE=14, LR_MON_PITCH=0.42, LR_MON_SPOT_LO=0.28, LR_MON_SPOT_HI=0.65,
         LR_MON_CORNER=1.5),
 }

@@ -17,14 +17,14 @@
 #pragma parameter LR_MASK_STR "Mask strength" 0.45 0 1 0.01
 #pragma parameter LR_WHITE "White point (K)" 9300 6500 9300 100
 #pragma parameter LR_PHOS "Phosphors (0 auto, 1 sRGB, 2 SMPTE-C, 3 EBU, 4 Japanese P22)" 0 0 4 1
-#pragma parameter LR_CURV_X "Curvature horizontal" 0.035 0 0.15 0.005
-#pragma parameter LR_CURV_Y "Curvature vertical" 0.045 0 0.15 0.005
+#pragma parameter LR_CURV_X "Curvature horizontal" 0.025 0 0.15 0.005
+#pragma parameter LR_CURV_Y "Curvature vertical" 0.03 0 0.15 0.005
 #pragma parameter LR_CORNER "Rounded corners" 0.045 0 0.1 0.005
 #pragma parameter LR_GLOW "Glass glow" 0.04 0 0.4 0.01
 #pragma parameter LR_GLOW_SIZE "Glass glow size" 0.5 0.2 1.5 0.05
 #pragma parameter LR_VIGNETTE "Darker edges" 0.15 0 0.7 0.01
-#pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" -0.06 -0.08 0.12 0.005
-#pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0 0.03 0.001
+#pragma parameter LR_OVERSCAN "Overscan (negative adds a black border)" -0.015 -0.08 0.12 0.005
+#pragma parameter LR_AMBIENT "Room reflection on the glass" 0.003 0 0.03 0.001
 #pragma parameter LR_MON_SIZE "Monitor size (inches)" 15 10 21 1
 #pragma parameter LR_MON_PITCH "Dot pitch (mm)" 0.28 0.2 0.7 0.01
 #pragma parameter LR_MON_SPOT_LO "Spot size in dark areas (mm)" 0.3 0.1 1 0.01

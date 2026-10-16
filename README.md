@@ -94,7 +94,7 @@ work on the desktop.
 ![PC monitor at 320x200, 640x480 and 1024x768](docs/pc-monitor-modes.jpg)
 
 The Amiga 1084S preset is built the same way, from the monitor's service manual: 0.42 mm slot mask, 6.5 MHz
-amplifier, D65 white, and the whole picture with a black border around it. Because its beam is described in
+amplifier, D65 white, and the picture as owners set it up, nearly filling the glass. Because its beam is described in
 millimetres, NTSC games (200 lines, further apart) show stronger lines than PAL games (256 lines), as on the
 real monitor. The beam was calibrated on a photo of a real 1084S.
 

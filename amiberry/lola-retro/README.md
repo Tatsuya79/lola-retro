@@ -3,7 +3,7 @@
 The Commodore 1084S preset of [Lola Retro](https://github.com/zoran123456/lola-retro) for the Amiga
 emulator [Amiberry](https://amiberry.com). It is the RetroArch shader converted to GLSL, and it gives the
 same picture: the monitor as its service manual describes it, NTSC lines further apart than PAL lines,
-and the whole picture inside a black border, as on the real monitor.
+and the picture nearly filling the glass, as owners set up the real monitor.
 
 ![Cannon Fodder and Super Stardust AGA in Amiberry with the 1084S preset](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/amiberry-1084s.jpg)
 
@@ -26,8 +26,8 @@ The defaults are right. What matters:
 | Correct aspect ratio | on (default) | The picture area is then 4:3, like the tube. (The tube stays 4:3 either way.) |
 | Shader for RTG modes | none | RTG screens are graphics card modes; a 15 kHz monitor could not show them. |
 
-To fill more of the screen, raise **Overscan** in the shader parameters (like turning up the monitor's
-width and height). To see the monitor at its real size on a large display instead, enter your screen's
+**Overscan** in the shader parameters is the monitor's width and height: 0.1 leaves about 5 mm of black
+around a 320×256 screen, −0.015 is the factory setting with its wide black borders. To see the monitor at its real size on a large display instead, enter your screen's
 height under **Real size** (in cm, or in inches with unit 1), in full screen. **Around the tube** then
 puts the monitor around it, as large as the real one: in a room (1) or floating in space (2). **Room light**
 sets how bright the room is: 1 a dim room, 3 a lit room, 20 daylight.
