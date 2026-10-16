@@ -100,6 +100,31 @@ real monitor. The beam was calibrated on a photo of a real 1084S.
 
 ![The same text on the 1084S in PAL and NTSC](docs/amiga-1084s-pal-ntsc.jpg)
 
+## Around the tube
+
+On a large display the tube can be drawn at its real size, with the monitor or TV around it: enter your
+screen's height under **Real size** and set **Around the tube** to 1. In RetroArch set **Aspect Ratio** to
+*Full* so the surroundings fill the whole screen. Amiberry and 86Box have the same settings.
+
+Each casing is measured on photos of real ones and drawn in millimetres, like the tube. The Amiga preset gets
+a Commodore monitor (after the M1438S), the PC presets a 90s PC monitor (after a Compaq 151FS), and the TV
+presets a dark 90s TV with speakers and buttons under the screen, which grows with **Monitor size**.
+**Room light** sets the room, from a dim room to daylight, and the screen lights the walls around the glass
+in its own colours, changing with the picture.
+
+![Amiga monitor, PC monitor and TV in a lit room](docs/around-the-tube-casings.jpg)
+
+<sub>Real size on a screen 39.5 cm tall, Room light 6. All three at the same scale: the 14-inch Amiga monitor
+is smaller than the 15-inch PC monitor and TV.</sub>
+
+Around the tube 2 and 3 put the monitor in a scene instead: floating in space, among stars that slowly come
+closer, or in front of a synthwave sunset with a neon grid that runs toward you. Both scenes move. All the
+settings are in [Parameters](shaders/lola-retro/README.md#parameters).
+
+![The Amiga monitor in space and the TV in the synthwave scene](docs/around-the-tube-scenes.jpg)
+
+<sub>Around the tube 2 and 3, Room light 3.</sub>
+
 ## Amiberry
 
 The Amiga 1084S preset also comes as GLSL for [Amiberry](https://amiberry.com), the stand-alone Amiga
@@ -160,6 +185,8 @@ Which preset and settings to use per system: [RECOMMENDED-CORES.md](shaders/lola
   datasheet), PAL TVs by the standard; phosphors are SMPTE-C, EBU or Japanese P22 instead of sRGB.
 - **Glass.** Curvature, halation, white point (6500–9300 K), vignette, room reflection, misconvergence, afterglow
   (RetroArch only: Amiberry and 86Box have no feedback textures).
+- **Around the tube.** The monitor or TV at its real size, its casing measured on real ones and lit by the room
+  and by the picture. Or, just for fun, space or a synthwave scene.
 - **Internal resolution.** PS1 and PS2 cores running at 2× and up are read as blocks of one console pixel,
   so the signal stays right and the extra detail only makes edges smoother.
 - **HDR output.** On an HDR display the phosphor dots and scanline centres get the brightness a real tube
