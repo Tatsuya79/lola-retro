@@ -6,9 +6,9 @@ typical mid-90s 15-inch monitor described the way its spec sheet would (14-inch 
 a beam spot of 0.30–0.45 mm), so every video mode looks as it did on that one tube. 320×200 games show
 chunky pixels with fine lines, 640×480 is sharp, 1024×768 a little soft.
 
-![The PC monitor preset at 320x200, 640x480 and 1024x768](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/pc-monitor-modes.jpg)
+![Windows 98 in 86Box with the premium PC monitor preset](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/86box-win98.jpg)
 
-<sub>The PC monitor preset in RetroArch. In 86Box it gives the same picture.</sub>
+<sub>Windows 98 at 1024×768 from 86Box through `pc-monitor-vga-premium`.</sub>
 
 ## Install
 
@@ -26,7 +26,10 @@ chunky pixels with fine lines, 640×480 is sharp, 1024×768 a little soft.
 | `pc-monitor-vga-premium-plus.glslp` | The best 15-inch monitors (0.24 mm, 0.17–0.24 mm). |
 | `pc-monitor-vga-extreme.glslp` | Sharper than any real tube (0.22 mm, 0.13–0.18 mm), for long work on the Windows desktop. |
 
-All five use the same shader files and differ only in their parameter values.
+All five use the same shader files and differ only in their parameter values. The same part of the
+screen through each of them, at 1024×768 on a 3840×2560 screen:
+
+![The same dialog through the five PC monitor presets](https://raw.githubusercontent.com/zoran123456/lola-retro/main/docs/86box-pc-presets.jpg)
 
 ## 86Box settings
 

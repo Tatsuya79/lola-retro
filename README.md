@@ -111,8 +111,21 @@ fine texture, the lines show in darker areas, and the picture sits in the black 
 ## 86Box
 
 The PC monitor presets also come as GLSL for [86Box](https://86box.net), the PC emulator: with the OpenGL
-renderer, add `86box/lola-retro/pc-monitor-vga.glslp` (or one of the sharper ones) in **View → Renderer options…**. Same picture as in
+renderer, add one of the presets from `86box/lola-retro` in **View → Renderer options…**. Same picture as in
 RetroArch, from text mode and 320×200 up to 1024×768; setup and settings in its [README](86box/lola-retro/README.md).
+
+![Windows 98 in 86Box with the premium PC monitor preset](docs/86box-win98.jpg)
+
+<sub>A Windows 98 frame from 86Box at 1024×768 through `pc-monitor-vga-premium`, rendered the way 86Box runs it
+on a 3840×2560 screen.</sub>
+
+Five presets put the same 15-inch tube in different monitors, from an average one to `extreme`, which is
+sharper than any real tube and easy on the eyes for long work on the desktop:
+
+![The same dialog through the five PC monitor presets](docs/86box-pc-presets.jpg)
+
+<sub>The same part of the screen through each preset, 1:1 on that 3840×2560 screen. The average monitor is soft at
+1024×768, as many were; the better ones keep the text sharp; `extreme` shows the gaps between the lines.</sub>
 
 ## Presets
 
@@ -170,11 +183,6 @@ it follows from each console's real timing.
 merged, as they did on a 15-inch tube, whose beam spot was about 1.6 pixels wide at that resolution.
 
 ![PC monitor test patterns](docs/pc-monitor-patterns.jpg)
-
-A Windows 95 dialog in 640×480: text stays sharp and the dotted focus rectangle around Cancel keeps its
-dots, the way photos of real VGA monitors show it.
-
-![Windows 95 dialog on the PC monitor](docs/pc-monitor-dialog.jpg)
 
 Measured on synthetic patterns:
 
