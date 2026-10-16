@@ -737,18 +737,49 @@ vec3 backdrop(vec2 c, float dist, vec2 qq, vec2 tc, vec2 tubePx)
         lamp += vec3(0.12, 1.0, 0.2) * (0.6 * (1.0 - smoothstep(-aa, aa, ld)) + 0.03 * exp(-0.5 * max(ld, 0.0) * max(ld, 0.0) / 9.0));
     }
 
-    // the picture lights the walls of the recess next to it, weakly: its light leaves the glass
-    // at a grazing angle. Three samples along the edge, wider apart further from it.
-    float ov = 1.0 - LR_OVERSCAN;
-    vec2 edge = clamp(c * 0.5 * ov + 0.5, 0.0, 1.0);
-    vec2 nt = boxOut((tc - 0.5) * tube, inner, 15.0);             // in texture orientation
-    vec2 along = vec2(-nt.y, nt.x) * (4.0 + d) / tube * ov;
-    vec3 gl = 0.5 * lr_tex_LR_Glow( edge, 0.0).rgb
-            + 0.25 * lr_tex_LR_Glow( clamp(edge - along, 0.0, 1.0), 0.0).rgb
-            + 0.25 * lr_tex_LR_Glow( clamp(edge + along, 0.0, 1.0), 0.0).rgb;
-    vec3 pic = gl * vWhite * 0.035 * exp(-d / 6.0) * mix(0.1, 1.0, rec);
+    // The screen lights the walls of the recess, which face the picture beside them, so they
+    // change with it. A point on a wall z mm in front of the glass sees the picture from about
+    // 0.7 z to 3 z beyond the edge; a Lambert screen of luminance L gives it 0.67 L (the Amiga's
+    // 55-degree walls) or 0.46 L (45 degrees) of illuminance, so the wall shines at 0.21 or 0.15
+    // of L times its albedo. The glass lets about 60% out at these angles, and the dot mask and
+    // the lines leave about 70% of the picture's light: 0.09 and 0.06. Six samples of the glowing
+    // picture over that region (it gets wider further from the glass).
+    vec3 pic = vec3(0.0), mirror = vec3(0.0);
+    float facing = smoothstep(-0.6, 1.2, u);
+    if (facing > 0.0)
+    {
+        float ov = 1.0 - LR_OVERSCAN;
+        vec2 edge = clamp(c * 0.5 * ov + 0.5, 0.0, 1.0);          // the tube's edge on the picture
+        vec2 nt = boxOut((tc - 0.5) * tube, inner, 15.0);         // outward, in texture orientation
+        vec2 inward = -nt / tube * ov, side = vec2(-nt.y, nt.x) / tube * ov;   // per mm
+        float z = (amiga ? 1.43 : 1.0) * max(d - mw, 0.0);
+        vec3 gl = vec3(0.0);
+        for (int i = 0; i < 2; i++)
+            for (int j = -1; j <= 1; j++)
+            {
+                vec2 q = edge + inward * ((i == 0 ? 0.9 : 2.4) * z + 1.0) + side * (1.3 * float(j) * z);
+                gl += (j == 0 ? 0.25 : 0.125) * lr_tex_LR_Glow( clamp(q, 0.0, 1.0), 0.0).rgb;
+            }
+        pic = gl * vWhite * (amiga ? 0.09 : 0.06) * facing;
 
-    vec3 casing = plastic(alb, n, vec3(p, 0.0), light, occ, gloss) + alb * pic;
+        // and, as glossy as the plastic is (Casing sheen), the picture mirrored in the walls: the
+        // view reflected off a wall reaches the glass a little further in (on the Amiga's steep
+        // walls; the PC monitor's shallower ones mirror the room instead)
+        vec3 v = normalize(vec3(0.0, 0.0, 600.0) - vec3(p, z));
+        vec3 r = reflect(-v, n);
+        if (gloss > 0.0 && r.z < -0.05)
+        {
+            vec2 hit = p + r.xy * (z / -r.z);                     // where it meets the glass, mm, y up
+            hit.y = -hit.y;                                       // texture orientation
+            vec2 q = hit / tube * ov + 0.5;
+            vec2 inPic = smoothstep(0.0, 0.01, q) * smoothstep(1.0, 0.99, q);
+            float F = 0.04 + 0.96 * pow(1.0 - max(dot(v, n), 0.0), 5.0);
+            mirror = lr_tex_LR_Glow( clamp(q, 0.0, 1.0), 0.0).rgb * vWhite
+                   * (0.55 * F * 2.0 * gloss * facing * inPic.x * inPic.y);
+        }
+    }
+
+    vec3 casing = plastic(alb, n, vec3(p, 0.0), light, occ, gloss) + alb * pic + mirror;
     vec3 behind = inSpace ? space((vTexCoord - 0.5) * LR_OutputSize.xy * LR_OutputSize.w,
                                   float(LR_FrameCount % 1000000u) / 60.0, LR_OutputSize.w)
                           : vec3(0.20, 0.195, 0.18) * light;   // the wall, further from the light
