@@ -49,8 +49,8 @@ layout(push_constant) uniform Push
 #pragma parameter LR_GLOW "Glass glow" 0.06 0.0 0.4 0.01
 #pragma parameter LR_GLOW_SIZE "Glass glow size" 0.5 0.2 1.5 0.05
 #pragma parameter LR_VIGNETTE "Darker edges" 0.3 0.0 0.7 0.01
-#pragma parameter LR_OVERSCANX "Overscan Width (negative adds a black border)" 0.05 -0.08 0.12 0.005
-#pragma parameter LR_OVERSCANY "Overscan Height (negative adds a black border)" 0.05 -0.08 0.12 0.005
+#pragma parameter LR_OVERSCANX "Overscan Width (negative adds a black border)" 0.05 -0.08 0.5 0.005
+#pragma parameter LR_OVERSCANY "Overscan Height (negative adds a black border)" 0.05 -0.08 0.5 0.005
 #pragma parameter LR_AMBIENT "Room reflection on the glass" 0.002 0.0 0.03 0.001
 #pragma parameter LR_HDR_MON "--- Monitor in millimetres (PC monitors, Amiga 1084S) ---" 0.0 0.0 0.0 1.0
 #pragma parameter LR_MON_MM "15 kHz monitor in mm (PC monitors always)" 0.0 0.0 1.0 1.0
